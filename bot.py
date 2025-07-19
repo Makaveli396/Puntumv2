@@ -1,95 +1,57 @@
-# NUEVO: Agregar después de create_tables()
+# OPCIÓN 1: SOLO ADMIN DEL BOT PUEDE AUTORIZAR
+# La más segura - solo tú puedes autorizar
 
-# Sistema de autorización simple - solo base de datos, sin variables de entorno
-def is_chat_authorized(chat_id):
-    """Verifica si un chat está autorizado usando la base de datos"""
-    try:
-        from db import get_chat_config
-        config = get_chat_config(chat_id)
-        return config and config.get('active', False)
-    except Exception as e:
-        print(f"[ERROR] Error verificando autorización: {e}")
-        return False
-
-def authorize_chat(chat_id, chat_title):
-    """Autoriza un chat y lo guarda en la base de datos"""
-    try:
-        from db import set_chat_config
-        set_chat_config(chat_id, chat_title, True, True)  # active=True, auto_jobs=True
-        print(f"[INFO] Chat {chat_id} autorizado en BD")
-        return True
-    except Exception as e:
-        print(f"[ERROR] Error autorizando chat: {e}")
-        return False
-
-def get_authorized_chats():
-    """Obtiene todos los chats autorizados de la base de datos"""
-    try:
-        import sqlite3
-        conn = sqlite3.connect('bot_data.db')
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT chat_id, chat_title FROM chat_config WHERE active = 1")
-        chats = cursor.fetchall()
-        conn.close()
-        
-        return [(chat_id, title) for chat_id, title in chats]
-    except Exception as e:
-        print(f"[ERROR] Error obteniendo chats autorizados: {e}")
-        return []
-
-# NUEVO: Middleware de autorización simplificado
-async def simple_auth_middleware(update, context):
-    """Middleware simple que solo verifica la base de datos"""
-    chat_id = update.effective_chat.id
+async def cmd_autorizar_admin_only(update, context):
+    """Solo el admin del bot puede autorizar grupos"""
+    # TU USER ID (cámbialo por tu ID real)
+    ADMIN_BOT_ID = 123456789  # 👈 PON TU ID AQUÍ
     
-    # Siempre permitir chats privados para comandos admin
+    if update.effective_user.id != 5548909327:
+        await update.message.reply_text(
+            "🚫 **Solo el administrador del bot puede autorizar grupos**\n\n"
+            "📞 Contacta a @tu_usuario para solicitar autorización"
+        )
+        return
+    
+    # Verificar que es un grupo
     if update.effective_chat.type == 'private':
-        return True
+        await update.message.reply_text("❌ Usa este comando en el grupo que quieres autorizar")
+        return
     
-    # Verificar en base de datos
-    if not is_chat_authorized(chat_id):
-        print(f"[SECURITY] Chat no autorizado: {chat_id} ({update.effective_chat.title})")
-        
-        # Responder solo una vez
-        try:
-            await update.message.reply_text(
-                "🚫 **Este grupo no está autorizado**\n\n"
-                "Para usar CINEGRAM Puntum Bot:\n"
-                "1️⃣ Un admin debe usar `/autorizar` aquí\n"
-                "2️⃣ O contactar a @tu_usuario para autorización\n\n"
-                "🎬 ¡Pronto podrás sumar puntos con tus aportes cinematográficos!",
-                parse_mode='Markdown',
-                reply_to_message_id=update.message.message_id
-            )
-        except Exception as e:
-            print(f"[ERROR] Error enviando mensaje de autorización: {e}")
-        
-        return False
+    chat_id = update.effective_chat.id
+    chat_title = update.effective_chat.title or "Grupo Sin Título"
     
-    return True
+    if is_chat_authorized(chat_id):
+        await update.message.reply_text("✅ Este grupo ya está autorizado")
+        return
+    
+    # Autorizar
+    if authorize_chat(chat_id, chat_title):
+        await update.message.reply_text(
+            "🎉 **¡GRUPO AUTORIZADO POR ADMIN!** 🎉\n\n"
+            f"🎬 **{chat_title}** ya puede usar CINEGRAM Puntum Bot\n\n"
+            "🏷️ **Hashtags disponibles:**\n"
+            "• `#aporte` • `#reseña` • `#crítica` • `#recomendación`\n\n"
+            "🍿 **¡Que comience la diversión cinematográfica!**",
+            parse_mode='Markdown'
+        )
+        print(f"[ADMIN] Grupo autorizado por admin: {chat_id} ({chat_title})")
+    else:
+        await update.message.reply_text("❌ Error al autorizar")
 
-# MODIFICAR: Wrapper simplificado
-def auth_required(handler_func):
-    """Decorador simple para handlers que requieren autorización"""
-    async def wrapper(update, context):
-        if await simple_auth_middleware(update, context):
-            return await handler_func(update, context)
-    return wrapper
+# ===================================================================
 
-# NUEVOS COMANDOS SÚPER FÁCILES
+# OPCIÓN 2: SOLICITUD DE AUTORIZACIÓN (LA MÁS ELEGANTE)
+# Los admins solicitan, tú apruebas fácilmente
 
-async def cmd_autorizar(update, context):
-    """
-    Comando FÁCIL para autorizar el grupo actual
-    Cualquier admin del grupo puede usarlo
-    """
-    # Verificar que es un grupo/supergrupo
+async def cmd_solicitar_autorizacion(update, context):
+    """Los admins del grupo solicitan autorización"""
+    # Verificar que es un grupo
     if update.effective_chat.type == 'private':
         await update.message.reply_text("❌ Este comando solo funciona en grupos")
         return
     
-    # Verificar que el usuario es admin del grupo
+    # Verificar que es admin del grupo
     try:
         member = await context.bot.get_chat_member(
             update.effective_chat.id, 
@@ -98,13 +60,11 @@ async def cmd_autorizar(update, context):
         
         if member.status not in ['administrator', 'creator']:
             await update.message.reply_text(
-                "❌ Solo los administradores del grupo pueden autorizar el bot"
+                "❌ Solo los administradores del grupo pueden solicitar autorización"
             )
             return
-            
-    except Exception as e:
-        print(f"[ERROR] Error verificando admin: {e}")
-        await update.message.reply_text("❌ Error verificando permisos de administrador")
+    except Exception:
+        await update.message.reply_text("❌ Error verificando permisos")
         return
     
     chat_id = update.effective_chat.id
@@ -112,42 +72,259 @@ async def cmd_autorizar(update, context):
     
     # Verificar si ya está autorizado
     if is_chat_authorized(chat_id):
+        await update.message.reply_text("✅ Este grupo ya está autorizado")
+        return
+    
+    # Verificar si ya hay una solicitud pendiente
+    if is_authorization_pending(chat_id):
         await update.message.reply_text(
-            "✅ Este grupo ya está autorizado para usar CINEGRAM Puntum Bot\n\n"
-            "🎬 ¡Pueden empezar a usar hashtags para sumar puntos!"
+            "⏳ **Ya hay una solicitud pendiente para este grupo**\n\n"
+            "El administrador del bot la revisará pronto."
         )
         return
     
-    # Autorizar el grupo
-    if authorize_chat(chat_id, chat_title):
-        await update.message.reply_text(
-            "🎉 **¡GRUPO AUTORIZADO!** 🎉\n\n"
-            "🎬 **CINEGRAM Puntum Bot** ya está activo aquí\n\n"
-            "📋 **Comandos disponibles:**\n"
-            "• `/help` - Ver todos los comandos\n"
-            "• `/ranking` - Ver clasificación actual\n"
-            "• `/reto` - Ver reto semanal\n"
-            "• `/mipuntaje` - Ver tus puntos\n\n"
-            "🏷️ **Usa hashtags para sumar puntos:**\n"
-            "• `#aporte` - Comparte contenido interesante\n"
-            "• `#reseña` - Reseña películas/series\n"
-            "• `#crítica` - Análisis profundo\n"
-            "• `#recomendación` - Recomienda películas\n\n"
-            "🍿 **¡Que empiece la competencia cinematográfica!**",
+    # Guardar solicitud
+    save_authorization_request(chat_id, chat_title, update.effective_user.id, update.effective_user.username)
+    
+    # Notificar al admin del bot
+    ADMIN_BOT_ID = 123456789  # 👈 TU ID
+    try:
+        await context.bot.send_message(
+            ADMIN_BOT_ID,
+            f"🔔 **NUEVA SOLICITUD DE AUTORIZACIÓN**\n\n"
+            f"📝 **Grupo:** {chat_title}\n"
+            f"🆔 **ID:** `{chat_id}`\n"
+            f"👤 **Solicitante:** @{update.effective_user.username or 'sin username'}\n"
+            f"📅 **Fecha:** {datetime.now().strftime('%d/%m/%Y %H:%M')}\n\n"
+            f"**Para autorizar:** `/aprobar {chat_id}`\n"
+            f"**Para rechazar:** `/rechazar {chat_id}`",
             parse_mode='Markdown'
         )
-        
-        print(f"[SUCCESS] Grupo autorizado: {chat_id} ({chat_title}) por {update.effective_user.username}")
-    else:
-        await update.message.reply_text("❌ Error al autorizar el grupo. Intenta de nuevo.")
+    except Exception as e:
+        print(f"[ERROR] No se pudo notificar al admin: {e}")
+    
+    # Confirmar al solicitante
+    await update.message.reply_text(
+        "📩 **¡Solicitud enviada!**\n\n"
+        "✅ Tu solicitud de autorización ha sido enviada al administrador del bot\n\n"
+        "⏰ **Recibirás una respuesta pronto**\n"
+        "🍿 Mientras tanto, prepara contenido cinematográfico genial para cuando se active!"
+    )
 
-async def cmd_desautorizar(update, context):
-    """Comando para desautorizar el grupo actual (solo admins)"""
+# Funciones auxiliares para solicitudes
+def save_authorization_request(chat_id, chat_title, user_id, username):
+    """Guarda solicitud de autorización en BD"""
+    import sqlite3
+    conn = sqlite3.connect('bot_data.db')
+    cursor = conn.cursor()
+    
+    # Crear tabla si no existe
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS authorization_requests (
+            chat_id INTEGER PRIMARY KEY,
+            chat_title TEXT,
+            requester_id INTEGER,
+            requester_username TEXT,
+            request_date TEXT,
+            status TEXT DEFAULT 'pending'
+        )
+    ''')
+    
+    cursor.execute('''
+        INSERT OR REPLACE INTO authorization_requests 
+        (chat_id, chat_title, requester_id, requester_username, request_date, status)
+        VALUES (?, ?, ?, ?, ?, 'pending')
+    ''', (chat_id, chat_title, user_id, username, datetime.now().isoformat()))
+    
+    conn.commit()
+    conn.close()
+
+def is_authorization_pending(chat_id):
+    """Verifica si hay solicitud pendiente"""
+    import sqlite3
+    conn = sqlite3.connect('bot_data.db')
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT 1 FROM authorization_requests WHERE chat_id = ? AND status = 'pending'", (chat_id,))
+    result = cursor.fetchone()
+    conn.close()
+    
+    return result is not None
+
+async def cmd_aprobar_grupo(update, context):
+    """Comando para aprobar solicitudes (solo admin bot)"""
+    ADMIN_BOT_ID = 123456789  # 👈 TU ID
+    
+    if update.effective_user.id != ADMIN_BOT_ID:
+        await update.message.reply_text("❌ Solo el admin del bot puede usar este comando")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("❌ Uso: `/aprobar CHAT_ID`")
+        return
+    
+    try:
+        chat_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ ID de chat inválido")
+        return
+    
+    # Obtener info de la solicitud
+    import sqlite3
+    conn = sqlite3.connect('bot_data.db')
+    cursor = conn.cursor()
+    
+    cursor.execute(
+        "SELECT chat_title, requester_username FROM authorization_requests WHERE chat_id = ? AND status = 'pending'",
+        (chat_id,)
+    )
+    result = cursor.fetchone()
+    
+    if not result:
+        await update.message.reply_text("❌ No se encontró solicitud pendiente para ese chat")
+        conn.close()
+        return
+    
+    chat_title, requester_username = result
+    
+    # Autorizar el grupo
+    if authorize_chat(chat_id, chat_title):
+        # Marcar solicitud como aprobada
+        cursor.execute(
+            "UPDATE authorization_requests SET status = 'approved' WHERE chat_id = ?",
+            (chat_id,)
+        )
+        conn.commit()
+        
+        # Notificar en el grupo
+        try:
+            await context.bot.send_message(
+                chat_id,
+                f"🎉 **¡SOLICITUD APROBADA!** 🎉\n\n"
+                f"🎬 **{chat_title}** ya está autorizado para usar CINEGRAM Puntum Bot\n\n"
+                f"🏷️ **Hashtags disponibles:**\n"
+                f"• `#aporte` • `#reseña` • `#crítica` • `#recomendación`\n\n"
+                f"🍿 **¡Que comience la competencia cinematográfica!**",
+                parse_mode='Markdown'
+            )
+        except Exception as e:
+            print(f"[ERROR] No se pudo notificar aprobación al grupo: {e}")
+        
+        await update.message.reply_text(
+            f"✅ **Grupo aprobado exitosamente**\n\n"
+            f"📝 **Grupo:** {chat_title}\n"
+            f"🆔 **ID:** `{chat_id}`\n"
+            f"👤 **Solicitante:** @{requester_username}\n"
+            f"🎬 El grupo ya puede usar el bot"
+        )
+        
+    else:
+        await update.message.reply_text("❌ Error al autorizar el grupo")
+    
+    conn.close()
+
+async def cmd_rechazar_grupo(update, context):
+    """Comando para rechazar solicitudes (solo admin bot)"""
+    ADMIN_BOT_ID = 123456789  # 👈 TU ID
+    
+    if update.effective_user.id != ADMIN_BOT_ID:
+        return
+    
+    if not context.args:
+        await update.message.reply_text("❌ Uso: `/rechazar CHAT_ID [motivo]`")
+        return
+    
+    try:
+        chat_id = int(context.args[0])
+        motivo = " ".join(context.args[1:]) or "No especificado"
+    except ValueError:
+        await update.message.reply_text("❌ ID de chat inválido")
+        return
+    
+    # Marcar como rechazada
+    import sqlite3
+    conn = sqlite3.connect('bot_data.db')
+    cursor = conn.cursor()
+    
+    cursor.execute(
+        "UPDATE authorization_requests SET status = 'rejected' WHERE chat_id = ? AND status = 'pending'",
+        (chat_id,)
+    )
+    
+    if cursor.rowcount == 0:
+        await update.message.reply_text("❌ No se encontró solicitud pendiente")
+        conn.close()
+        return
+    
+    conn.commit()
+    conn.close()
+    
+    # Notificar rechazo al grupo
+    try:
+        await context.bot.send_message(
+            chat_id,
+            f"❌ **Solicitud de autorización rechazada**\n\n"
+            f"**Motivo:** {motivo}\n\n"
+            f"📞 Puedes contactar al administrador para más información"
+        )
+    except Exception:
+        pass
+    
+    await update.message.reply_text(f"✅ Solicitud rechazada. Motivo: {motivo}")
+
+async def cmd_ver_solicitudes(update, context):
+    """Ver todas las solicitudes pendientes (solo admin bot)"""
+    ADMIN_BOT_ID = 123456789  # 👈 TU ID
+    
+    if update.effective_user.id != ADMIN_BOT_ID:
+        return
+    
+    import sqlite3
+    conn = sqlite3.connect('bot_data.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT chat_id, chat_title, requester_username, request_date 
+        FROM authorization_requests 
+        WHERE status = 'pending'
+        ORDER BY request_date DESC
+    ''')
+    
+    solicitudes = cursor.fetchall()
+    conn.close()
+    
+    if not solicitudes:
+        await update.message.reply_text("📝 No hay solicitudes pendientes")
+        return
+    
+    mensaje = "📋 **SOLICITUDES PENDIENTES**\n\n"
+    
+    for i, (chat_id, chat_title, username, fecha) in enumerate(solicitudes, 1):
+        fecha_formatted = datetime.fromisoformat(fecha).strftime("%d/%m %H:%M")
+        mensaje += (
+            f"{i}. **{chat_title}**\n"
+            f"   🆔 `{chat_id}`\n"
+            f"   👤 @{username or 'sin username'}\n"
+            f"   📅 {fecha_formatted}\n"
+            f"   ✅ `/aprobar {chat_id}`\n"
+            f"   ❌ `/rechazar {chat_id}`\n\n"
+        )
+    
+    await update.message.reply_text(mensaje, parse_mode='Markdown')
+
+# ===================================================================
+
+# OPCIÓN 3: NOTIFICACIÓN SIMPLE
+# Los admins usan /autorizar, pero tú recibes notificación y puedes revocar
+
+async def cmd_autorizar_con_notificacion(update, context):
+    """Admins autorizan, pero el admin bot recibe notificación"""
+    # Verificar que es un grupo
     if update.effective_chat.type == 'private':
         await update.message.reply_text("❌ Este comando solo funciona en grupos")
         return
     
-    # Verificar admin
+    # Verificar admin del grupo
     try:
         member = await context.bot.get_chat_member(
             update.effective_chat.id, 
@@ -155,110 +332,83 @@ async def cmd_desautorizar(update, context):
         )
         
         if member.status not in ['administrator', 'creator']:
-            await update.message.reply_text("❌ Solo administradores pueden desautorizar")
+            await update.message.reply_text("❌ Solo administradores del grupo pueden autorizar")
             return
-            
     except Exception:
         await update.message.reply_text("❌ Error verificando permisos")
         return
     
     chat_id = update.effective_chat.id
-    
-    try:
-        import sqlite3
-        conn = sqlite3.connect('bot_data.db')
-        cursor = conn.cursor()
-        cursor.execute("UPDATE chat_config SET active = 0 WHERE chat_id = ?", (chat_id,))
-        conn.commit()
-        conn.close()
-        
-        await update.message.reply_text(
-            "❌ **Grupo desautorizado**\n\n"
-            "El bot ya no responderá a hashtags ni comandos aquí.\n"
-            "Usa `/autorizar` si quieres reactivarlo."
-        )
-        
-        print(f"[INFO] Grupo desautorizado: {chat_id} por {update.effective_user.username}")
-        
-    except Exception as e:
-        print(f"[ERROR] Error desautorizando: {e}")
-        await update.message.reply_text("❌ Error al desautorizar")
-
-async def cmd_estado_grupo(update, context):
-    """Ver el estado de autorización del grupo actual"""
-    chat_id = update.effective_chat.id
-    chat_title = update.effective_chat.title or "Chat Privado"
+    chat_title = update.effective_chat.title or "Grupo Sin Título"
     
     if is_chat_authorized(chat_id):
-        status = "✅ AUTORIZADO"
-        mensaje = (
-            f"📊 **Estado del Grupo**\n\n"
-            f"🎬 **Grupo:** {chat_title}\n"
-            f"🆔 **ID:** `{chat_id}`\n"
-            f"📈 **Estado:** {status}\n\n"
-            f"🎯 El bot está **activo** y responde a:\n"
-            f"• Hashtags (#aporte, #reseña, etc.)\n"
-            f"• Comandos (/ranking, /reto, etc.)\n"
-            f"• Rankings automáticos semanales\n\n"
-            f"🏆 ¡Sigan sumando puntos!"
-        )
-    else:
-        status = "❌ NO AUTORIZADO"
-        mensaje = (
-            f"📊 **Estado del Grupo**\n\n"
-            f"🎬 **Grupo:** {chat_title}\n"
-            f"🆔 **ID:** `{chat_id}`\n"
-            f"📈 **Estado:** {status}\n\n"
-            f"⚠️ El bot **no está activo** aquí.\n"
-            f"👤 Un admin puede usar `/autorizar` para activarlo."
-        )
-    
-    await update.message.reply_text(mensaje, parse_mode='Markdown')
-
-async def cmd_grupos_autorizados(update, context):
-    """Lista todos los grupos autorizados (solo admins del bot)"""
-    ADMIN_IDS = [int(x) for x in os.environ.get("ADMIN_IDS", "").split(",") if x.strip()]
-    
-    if not ADMIN_IDS or update.effective_user.id not in ADMIN_IDS:
-        await update.message.reply_text("❌ Solo administradores del bot pueden ver esta información")
+        await update.message.reply_text("✅ Este grupo ya está autorizado")
         return
     
-    chats_autorizados = get_authorized_chats()
-    
-    if not chats_autorizados:
-        await update.message.reply_text("📝 No hay grupos autorizados aún")
-        return
-    
-    mensaje = "📋 **Grupos Autorizados CINEGRAM:**\n\n"
-    
-    for i, (chat_id, title) in enumerate(chats_autorizados, 1):
-        # Intentar verificar si el bot sigue en el grupo
-        try:
-            chat_info = await context.bot.get_chat(chat_id)
-            status = "✅"
-            title = chat_info.title or title
-        except Exception:
-            status = "⚠️ (inaccesible)"
+    # Autorizar inmediatamente
+    if authorize_chat(chat_id, chat_title):
+        await update.message.reply_text(
+            "🎉 **¡GRUPO AUTORIZADO!** 🎉\n\n"
+            "🎬 CINEGRAM Puntum Bot ya está activo\n\n"
+            "🏷️ Usa hashtags para sumar puntos:\n"
+            "• `#aporte` • `#reseña` • `#crítica` • `#recomendación`\n\n"
+            "🍿 ¡Que comience la diversión!",
+            parse_mode='Markdown'
+        )
         
-        mensaje += f"{i}. **{title}** {status}\n   `{chat_id}`\n\n"
-    
-    mensaje += f"📊 **Total:** {len(chats_autorizados)} grupos activos"
-    
-    await update.message.reply_text(mensaje, parse_mode='Markdown')
+        # Notificar al admin del bot
+        ADMIN_BOT_ID = 123456789  # 👈 TU ID
+        try:
+            await context.bot.send_message(
+                ADMIN_BOT_ID,
+                f"🔔 **NUEVO GRUPO AUTORIZADO**\n\n"
+                f"📝 **Grupo:** {chat_title}\n"
+                f"🆔 **ID:** `{chat_id}`\n"
+                f"👤 **Por:** @{update.effective_user.username or 'sin username'}\n"
+                f"📅 **Fecha:** {datetime.now().strftime('%d/%m/%Y %H:%M')}\n\n"
+                f"**Para revocar:** `/revocar {chat_id}`",
+                parse_mode='Markdown'
+            )
+        except Exception as e:
+            print(f"[ERROR] No se pudo notificar al admin: {e}")
+        
+        print(f"[AUTH] Grupo autorizado: {chat_id} ({chat_title}) por @{update.effective_user.username}")
+    else:
+        await update.message.reply_text("❌ Error al autorizar")
 
-# MODIFICAR: setup_bot() con comandos fáciles
+# CONFIGURACIÓN FINAL - OPCIÓN 2: SISTEMA DE SOLICITUDES
 async def setup_bot():
-    """Configura el bot con sistema de autorización fácil"""
+    """Configurar bot con sistema de solicitudes (OPCIÓN 2)"""
     global bot_app
     
     bot_app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).post_init(post_init).build()
     
-    # ========== COMANDOS DE AUTORIZACIÓN FÁCIL ==========
-    bot_app.add_handler(CommandHandler("autorizar", cmd_autorizar))  # ¡SÚPER FÁCIL!
-    bot_app.add_handler(CommandHandler("desautorizar", cmd_desautorizar))
-    bot_app.add_handler(CommandHandler("estado", cmd_estado_grupo))
+    # ========== OPCIÓN 2 ACTIVADA: SISTEMA DE SOLICITUDES ==========
     
-    # ========== COMANDOS PRINCIPALES CON AUTORIZACIÓN ==========
+    # Comando para que admins de grupos soliciten autorización
+    bot_app.add_handler(CommandHandler("solicitar", cmd_solicitar_autorizacion))
+    
+    # Comandos para que TÚ manejes las solicitudes desde privado
+    bot_app.add_handler(CommandHandler("aprobar", cmd_aprobar_grupo))
+    bot_app.add_handler(CommandHandler("rechazar", cmd_rechazar_grupo))
+    bot_app.add_handler(CommandHandler("solicitudes", cmd_ver_solicitudes))
+    
+    # Comandos de información
+    bot_app.add_handler(CommandHandler("estado", cmd_estado_grupo))
+    bot_app.add_handler(CommandHandler("grupos", cmd_grupos_autorizados))
+    
+    print("[INFO] ========== SISTEMA DE SOLICITUDES ACTIVADO ==========")
+    print("[INFO] 📝 Para grupos nuevos: /solicitar")  
+    print("[INFO] ✅ Para ti (admin): /aprobar ID")
+    print("[INFO] ❌ Para ti (admin): /rechazar ID")
+    print("[INFO] 📋 Para ti (admin): /solicitudes")
+    print("[INFO] =====================================================")
+    
+    # IMPORTANTE: Crear tabla de solicitudes al inicio
+    create_authorization_requests_table()
+    
+    print(f"[INFO] 🤖 Admin Bot ID requerido: Cambia '123456789' por tu ID real")
+    # ========== HANDLERS PRINCIPALES CON AUTORIZACIÓN ==========
     bot_app.add_handler(CommandHandler("start", auth_required(cmd_start)))
     bot_app.add_handler(CommandHandler("help", auth_required(cmd_help)))
     bot_app.add_handler(CommandHandler("ranking", auth_required(cmd_ranking)))
@@ -268,8 +418,7 @@ async def setup_bot():
     bot_app.add_handler(CommandHandler("mirank", auth_required(cmd_mirank)))
     bot_app.add_handler(CommandHandler("test", auth_required(cmd_test)))
     
-    # ========== COMANDOS ADMIN (funcionan en privado) ==========
-    bot_app.add_handler(CommandHandler("grupos", cmd_grupos_autorizados))
+    # ========== COMANDOS ADMIN ADICIONALES ==========
     bot_app.add_handler(CommandHandler("nuevoreto", cmd_nuevo_reto))
     bot_app.add_handler(CommandHandler("testjob", cmd_test_job))
     bot_app.add_handler(CommandHandler("debug", cmd_debug))
@@ -281,14 +430,7 @@ async def setup_bot():
     bot_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auth_required(phrase_middleware)), group=1)
     bot_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auth_required(fallback_debug)), group=2)
     
-    print("[INFO] ========== SISTEMA DE AUTORIZACIÓN FÁCIL ACTIVADO ==========")
-    print("[INFO] 🎯 Comandos para autorización:")
-    print("[INFO] - /autorizar - Cualquier admin puede autorizar su grupo")
-    print("[INFO] - /estado - Ver si el grupo está autorizado")
-    print("[INFO] - /grupos - Listar grupos autorizados (admin bot)")
-    print("[INFO] ============================================================")
-    
-    # Resto igual...
+    # Inicializar y configurar webhook
     await bot_app.initialize()
     await bot_app.start()
     
@@ -297,3 +439,23 @@ async def setup_bot():
     print(f"[INFO] Webhook configurado: {webhook_url} => {result}")
     
     return bot_app
+def create_authorization_requests_table():
+    """Crear tabla de solicitudes al inicializar el bot"""
+    import sqlite3
+    conn = sqlite3.connect('bot_data.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS authorization_requests (
+            chat_id INTEGER PRIMARY KEY,
+            chat_title TEXT,
+            requester_id INTEGER,
+            requester_username TEXT,
+            request_date TEXT,
+            status TEXT DEFAULT 'pending'
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+    print("[INFO] 📋 Tabla de solicitudes de autorización creada/verificada")

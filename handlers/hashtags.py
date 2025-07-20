@@ -64,7 +64,7 @@ def normalize_text(text):
     return normalized.lower()
 
 def find_hashtags_in_message(text):
-    """FUNCIÓN MEJORADA - Encuentra TODOS los hashtags válidos con mejor detección"""
+    """FUNCIÓN CORREGIDA - Encuentra TODOS los hashtags válidos con detección mejorada"""
     if not text:
         return []
     
@@ -72,21 +72,29 @@ def find_hashtags_in_message(text):
     
     found_hashtags = []
     
-    # ✅ PATRONES CORREGIDOS - Detecta caracteres Unicode
+    # ✅ PATRONES MEJORADOS - Detecta hashtags en CUALQUIER posición
     hashtag_patterns = [
-        r'#([\w\u00C0-\u017F]+)',                    # #palabra (con Unicode)
-        r'#\s*([\w\u00C0-\u017F]+)',                 # # palabra (con espacio)
-        r'(?:^|\s)#([\w\u00C0-\u017F]+)',            # hashtag al inicio o después de espacio
+        # Patrón principal: # seguido de palabra (Unicode completo)
+        r'#([\w\u00C0-\u024F\u1E00-\u1EFF]+)',
+        # Patrón con espacio después del #
+        r'#\s+([\w\u00C0-\u024F\u1E00-\u1EFF]+)',
+        # Patrón al final de línea o antes de puntuación
+        r'#([\w\u00C0-\u024F\u1E00-\u1EFF]+)(?=\s|$|[.,;:!?])',
     ]
     
-    for pattern in hashtag_patterns:
+    for i, pattern in enumerate(hashtag_patterns):
         hashtags_found = re.findall(pattern, text, re.IGNORECASE | re.UNICODE)
         
         for hashtag_word in hashtags_found:
+            # Limpiar la palabra (remover espacios extra)
+            hashtag_word = hashtag_word.strip()
+            if not hashtag_word:
+                continue
+                
             # Normalizar la palabra encontrada
             normalized_hashtag = normalize_text(hashtag_word)
             
-            print(f"[DEBUG] 🏷️ Hashtag encontrado: '{hashtag_word}' -> normalizado: '{normalized_hashtag}'")
+            print(f"[DEBUG] 🏷️ Hashtag encontrado (patrón {i+1}): '{hashtag_word}' -> normalizado: '{normalized_hashtag}'")
             
             # Verificar si está en la lista de hashtags válidos
             if normalized_hashtag in VALID_HASHTAGS:
@@ -95,12 +103,16 @@ def find_hashtags_in_message(text):
                 print(f"[DEBUG] ✅ VÁLIDO: #{hashtag_word} = {points} puntos")
             else:
                 print(f"[DEBUG] ❌ NO VÁLIDO: #{hashtag_word} (normalizado: {normalized_hashtag})")
+                # DEBUG ADICIONAL: Mostrar hashtags válidos similares
+                similar = [h for h in VALID_HASHTAGS.keys() if h.startswith(normalized_hashtag[:3])]
+                if similar:
+                    print(f"[DEBUG] 💡 Hashtags similares disponibles: {similar}")
     
     # Eliminar duplicados manteniendo el orden
     unique_hashtags = []
     seen = set()
     for hashtag, points in found_hashtags:
-        hashtag_lower = hashtag.lower()
+        hashtag_lower = normalize_text(hashtag)
         if hashtag_lower not in seen:
             unique_hashtags.append((hashtag, points))
             seen.add(hashtag_lower)

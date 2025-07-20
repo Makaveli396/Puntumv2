@@ -1791,4 +1791,3 @@ def get_game_handlers():
         ],
         'message_handler': handle_game_message
     }
->>>>>>> 8887c94c189c8fd127cc098a5db2f7cc0fc88192

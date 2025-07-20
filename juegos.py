@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import random
 import asyncio
 from datetime import datetime, timedelta

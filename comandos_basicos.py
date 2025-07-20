@@ -295,7 +295,7 @@ Gana puntos usando hashtags en tus mensajes:
         await update.message.reply_text(simple_help)
 
 async def cmd_ranking(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Mostrar ranking de usuarios mejorado"""
+    """Mostrar ranking de usuarios con formato simplificado"""
     try:
         top_users = get_top10()
         
@@ -308,8 +308,6 @@ async def cmd_ranking(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         ranking_text = "🏆 <b>TOP 10 CINÉFILOS</b> 🎬\n\n"
         
-        medals = ["🥇", "🥈", "🥉"] + ["📍"] * 7
-        
         for i, user_data in enumerate(top_users, 1):
             # Manejar diferentes formatos de datos
             if len(user_data) >= 3:
@@ -318,12 +316,18 @@ async def cmd_ranking(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 username, points = user_data[0], user_data[1]
                 level = calculate_level(points)
             
-            medal = medals[i-1] if i <= len(medals) else "📍"
-            level_info = LEVEL_THRESHOLDS.get(level, (0, 0, "Novato", "🌱"))
-            level_name, level_emoji = level_info[2], level_info[3]
+            # Asignar medallas y numeración
+            if i == 1:
+                position_icon = "🥇"
+            elif i == 2:
+                position_icon = "🥈"
+            elif i == 3:
+                position_icon = "🥉"
+            else:
+                position_icon = f"{i}."
             
-            ranking_text += f"{medal} <b>{i}.</b> {username}\n"
-            ranking_text += f"    {level_emoji} {points} puntos - {level_name}\n\n"
+            # Formato simplificado
+            ranking_text += f"{position_icon} {username} - {points} pts (Nivel {level})\n"
         
         await update.message.reply_text(ranking_text, parse_mode='HTML')
         logger.info(f"Usuario {update.effective_user.id} consultó ranking")

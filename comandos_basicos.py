@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from db import get_user_stats, get_top10, add_points, check_rate_limit
+from db import get_user_stats, get_top10, add_points
 import random
 import datetime
 import logging

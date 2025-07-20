@@ -120,23 +120,23 @@ def main():
     # ==================== SOLUCIÓN DEFINITIVA DE MANEJADORES ====================
     
     async def unified_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Manejador unificado que decide si procesar hashtags o juegos"""
-        if not update.message or not update.message.text:
-            return
-            
-        message_text = update.message.text
+    """Manejador unificado que decide si procesar hashtags o juegos"""
+    if not update.message or not update.message.text:
+        return
         
-        # Verificar si contiene hashtags válidos
-        import re
-        hashtag_pattern = r'#\w+'
-        found_hashtags = re.findall(hashtag_pattern, message_text, re.IGNORECASE)
-        
-        if found_hashtags:
-            print(f"[DEBUG] 🏷️ Procesando como HASHTAG: '{message_text[:50]}...'")
-            return await handle_hashtags(update, context)
-        else:
-            print(f"[DEBUG] 🎮 Procesando como JUEGO: '{message_text[:50]}...'")
-            return await handle_game_message(update, context)
+    message_text = update.message.text
+    
+    # ✅ REGEX CORREGIDO - Detecta caracteres Unicode incluyendo ñ, acentos, etc.
+    hashtag_pattern = r'#[\w\u00C0-\u017F]+'
+    found_hashtags = re.findall(hashtag_pattern, message_text, re.IGNORECASE)
+    
+    if found_hashtags:
+        print(f"[DEBUG] 🏷️ Procesando como HASHTAG: '{message_text[:50]}...'")
+        print(f"[DEBUG] 🔍 Hashtags encontrados por regex: {found_hashtags}")
+        return await handle_hashtags(update, context)
+    else:
+        print(f"[DEBUG] 🎮 Procesando como JUEGO: '{message_text[:50]}...'")
+        return await handle_game_message(update, context)
     
     # 1. CALLBACKS primero
     app.add_handler(CallbackQueryHandler(handle_trivia_callback))

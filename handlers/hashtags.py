@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # HASHTAGS UNIFICADOS - SIN REPETICIONES Y CON DETECCIÓN FLEXIBLE
 VALID_HASHTAGS = {
     # Alto valor
-    'critica': 10,         # Análisis profundo, mínimo 100 palabras  
+    'critica': 10,         # Análisis profundo, mínimo 20 palabras  
     'reseña': 7,           # Reseña detallada, mínimo 50 palabras
     'resena': 7,           # Sin tilde
     'recomendacion': 5,    # Formato específico requerido
@@ -72,11 +72,11 @@ def find_hashtags_in_message(text):
     
     found_hashtags = []
     
-    # Buscar patrones de hashtag más flexible: #palabra, # palabra, etc.
+    # ✅ PATRONES CORREGIDOS - Detecta caracteres Unicode
     hashtag_patterns = [
-        r'#(\w+)',                    # #palabra (patrón normal)
-        r'#\s*(\w+)',                 # # palabra (con espacio)
-        r'(?:^|\s)#(\w+)',            # hashtag al inicio o después de espacio
+        r'#([\w\u00C0-\u017F]+)',                    # #palabra (con Unicode)
+        r'#\s*([\w\u00C0-\u017F]+)',                 # # palabra (con espacio)
+        r'(?:^|\s)#([\w\u00C0-\u017F]+)',            # hashtag al inicio o después de espacio
     ]
     
     for pattern in hashtag_patterns:

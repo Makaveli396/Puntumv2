@@ -23,7 +23,7 @@ from juegos import (
     cmd_emojipelicula,
     cmd_pista,
     cmd_rendirse,
-    cmd_estadisticas_juegos,
+    cmd_estadisticasjuegos,  # CORREGIDO: cambié cmd_estadisticas_juegos por cmd_estadisticasjuegos
     cmd_top_jugadores,
     handle_trivia_callback,
     handle_game_message
@@ -112,7 +112,7 @@ def main():
     app.add_handler(CommandHandler("emojipelicula", auth_required(cmd_emojipelicula)))
     app.add_handler(CommandHandler("pista", auth_required(cmd_pista)))
     app.add_handler(CommandHandler("rendirse", auth_required(cmd_rendirse)))
-    app.add_handler(CommandHandler("estadisticasjuegos", auth_required(cmd_estadisticas_juegos)))
+    app.add_handler(CommandHandler("estadisticasjuegos", auth_required(cmd_estadisticasjuegos)))  # CORREGIDO
     app.add_handler(CommandHandler("topjugadores", auth_required(cmd_top_jugadores)))
     
     # Manejadores de callbacks y mensajes
@@ -140,8 +140,8 @@ def main():
             app.run_webhook(
                 listen="0.0.0.0",
                 port=int(os.environ.get("PORT", 8000)),
-                url_path="/webhook",
                 webhook_url=webhook_url,
+                url_path="/webhook",
                 drop_pending_updates=True
             )
         except Exception as e:

@@ -4,34 +4,122 @@ from db import get_user_stats, get_top10, add_points
 import random
 import datetime
 import logging
+import re
+import time
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Hashtags válidos para el sistema de puntos (CORREGIDOS)
+# HASHTAGS UNIFICADOS - SIN REPETICIONES Y CON DETECCIÓN FLEXIBLE
 VALID_HASHTAGS = {
-    '#critica': 10,      # Análisis profundo, mínimo 100 palabras
-    '#reseña': 7,        # Reseña detallada, mínimo 50 palabras
-    '#recomendacion': 5, # Formato específico requerido
-    '#debate': 4,
-    '#aporte': 3,
-    '#cinefilo': 3,
-    '#pelicula': 3,
-    '#cine': 3,
-    '#serie': 3,
-    '#director': 3,
-    '#oscar': 3,
-    '#festival': 3,
-    '#documental': 3,
-    '#animacion': 3,
-    '#clasico': 3,
-    '#independiente': 3,
-    '#actor': 2,
-    '#genero': 2,
-    '#pregunta': 2,
-    '#spoiler': 1
+    # Alto valor
+    'critica': 10,         # Análisis profundo, mínimo 100 palabras  
+    'reseña': 7,           # Reseña detallada, mínimo 50 palabras
+    'resena': 7,           # Sin tilde
+    'recomendacion': 5,    # Formato específico requerido
+    
+    # Participación media
+    'debate': 4,
+    'aporte': 3,
+    'cinefilo': 3,
+    'pelicula': 3,
+    'cine': 3,
+    'serie': 3,
+    'director': 3,
+    'oscar': 3,
+    'festival': 3,
+    'documental': 3,
+    'animacion': 3,
+    'clasico': 3,
+    'independiente': 3,
+    
+    # Participación baja
+    'actor': 2,
+    'genero': 2,
+    'pregunta': 2,
+    'ranking': 2,
+    'rankin': 2,           # Typo común
+    
+    # Mínimo
+    'spoiler': 1
 }
+
+# Cache para control de spam
+user_hashtag_cache = {}
+
+def normalize_text(text):
+    """Normaliza texto removiendo tildes y caracteres especiales"""
+    import unicodedata
+    # Remover tildes
+    normalized = unicodedata.normalize('NFD', text)
+    normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+    return normalized.lower()
+
+def find_hashtags_in_message(text):
+    """Encuentra TODOS los hashtags válidos en el mensaje con detección flexible"""
+    if not text:
+        return []
+    
+    found_hashtags = []
+    text_normalized = normalize_text(text)
+    
+    # Extraer todos los hashtags del texto
+    hashtag_pattern = r'#(\w+)'
+    hashtags_in_text = re.findall(hashtag_pattern, text_normalized)
+    
+    print(f"[DEBUG] Hashtags extraídos del texto: {hashtags_in_text}")
+    
+    # Verificar cada hashtag extraído contra nuestra lista válida
+    for hashtag_word in hashtags_in_text:
+        if hashtag_word in VALID_HASHTAGS:
+            points = VALID_HASHTAGS[hashtag_word]
+            found_hashtags.append((f"#{hashtag_word}", points))
+            print(f"[DEBUG] ✅ Hashtag válido encontrado: #{hashtag_word} = {points} puntos")
+        else:
+            print(f"[DEBUG] ❌ Hashtag NO válido: #{hashtag_word}")
+    
+    # Eliminar duplicados manteniendo el orden
+    unique_hashtags = []
+    seen = set()
+    for hashtag, points in found_hashtags:
+        if hashtag not in seen:
+            unique_hashtags.append((hashtag, points))
+            seen.add(hashtag)
+    
+    print(f"[DEBUG] Hashtags únicos finales: {unique_hashtags}")
+    return unique_hashtags
+
+def is_spam(user_id, hashtag):
+    """Detecta spam basado en frecuencia de hashtags por usuario"""
+    current_time = time.time()
+    
+    if user_id not in user_hashtag_cache:
+        user_hashtag_cache[user_id] = {}
+    
+    user_data = user_hashtag_cache[user_id]
+    
+    # Limpiar datos antiguos (más de 5 minutos)
+    if "last_time" in user_data and current_time - user_data["last_time"] > 300:
+        user_data.clear()
+    
+    # Contar uso del hashtag
+    if hashtag in user_data:
+        user_data[hashtag] = user_data.get(hashtag, 0) + 1
+        if user_data[hashtag] > 3:  # Máximo 3 veces en 5 minutos
+            return True
+    else:
+        user_data[hashtag] = 1
+    
+    user_data["last_time"] = current_time
+    return False
+
+def count_words(text):
+    """Cuenta palabras sin incluir hashtags"""
+    if not text:
+        return 0
+    text_without_hashtags = re.sub(r'#\w+', '', text)
+    return len(text_without_hashtags.split())
 
 # Niveles del sistema
 LEVEL_THRESHOLDS = {
@@ -131,12 +219,13 @@ Gana puntos usando hashtags en tus mensajes:
 • *\\#documental*, *\\#animacion*, *\\#clasico* \\- 3 pts
 • *\\#independiente* \\- 3 pts
 • *\\#actor*, *\\#genero*, *\\#pregunta* \\- 2 pts
+• *\\#ranking* \\- 2 pts
 • *\\#spoiler* \\- 1 pt \\(marca contenido sensible\\)
 
 🎮 *JUEGOS \\(Próximamente\\)*
 • `/cinematrivia` \\- Trivia con opciones múltiples
 • `/adivinapelicula` \\- Adivina película por pistas
-• `/emojipelicula` \\- Adivina película por emojis
+• `/emojipelicula` \\- Adivina por emojis
 
 📈 *COMANDOS DISPONIBLES*
 • `/start` \\- Iniciar y conocer el bot
@@ -190,12 +279,12 @@ Gana puntos usando hashtags en tus mensajes:
         simple_help = """🎬 GUÍA DEL BOT CINÉFILO
 
 📊 SISTEMA DE PUNTOS:
-• #critica - 10 pts (mínimo 20 palabras)
-• #reseña - 15 pts (mínimo 50 palabras)  
+• #critica - 10 pts (análisis profundo)
+• #reseña - 7 pts (reseña detallada)  
 • #recomendacion - 5 pts
 • #debate - 4 pts
 • #aporte, #cinefilo, #pelicula - 3 pts
-• #pregunta - 2 pts
+• #pregunta, #ranking - 2 pts
 • #spoiler - 1 pt
 
 🎮 JUEGOS: /cinematrivia, /adivinapelicula, /emojipelicula
@@ -360,110 +449,127 @@ async def cmd_reto(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(simple_text)
 
 async def handle_hashtags(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Manejar mensajes con hashtags cinéfilos MEJORADO"""
+    """FUNCIÓN PRINCIPAL CORREGIDA - Detecta TODOS los hashtags válidos"""
     if not update.message or not update.message.text:
         return
     
-    message_text = update.message.text.lower()
+    message_text = update.message.text
     user = update.effective_user
     chat = update.effective_chat
     
-    # Buscar hashtags válidos en el mensaje
-    found_hashtags = []
-    total_points = 0
+    print(f"[DEBUG] 🔍 Procesando mensaje de {user.username or user.first_name}")
+    print(f"[DEBUG] 📝 Texto completo: {message_text}")
+    print(f"[DEBUG] 🏷️ Chat ID: {chat.id}")
     
-    for hashtag, points in VALID_HASHTAGS.items():
-        if hashtag in message_text:
-            found_hashtags.append((hashtag, points))
+    # 🎯 NUEVA DETECCIÓN MEJORADA
+    found_hashtags = find_hashtags_in_message(message_text)
     
     if not found_hashtags:
-        return  # No hay hashtags válidos
+        print(f"[DEBUG] ❌ No se encontraron hashtags válidos en: {message_text}")
+        return
     
-    # Verificar rate limiting (prevenir spam)
-    try:
-        if not check_rate_limit(user.id, found_hashtags[0][0]):
-            logger.warning(f"Rate limit excedido para usuario {user.id}")
-            return
-    except:
-        pass  # Si no existe la función, continuar
+    print(f"[DEBUG] ✅ Hashtags encontrados: {found_hashtags}")
     
-    # Calcular puntos (evitar duplicados)
-    unique_hashtags = list(set(found_hashtags))
-    total_points = sum(points for _, points in unique_hashtags)
+    # Verificar spam y calcular puntos
+    valid_hashtags = []
+    total_points = 0
+    warnings = []
     
-    # Validaciones especiales para hashtags de alto valor
-    original_text = update.message.text
-    word_count = len(original_text.split())
-    
-    # Bonus y validaciones
-    bonus_text = ""
-    
-    # Para #critica: requiere mínimo 100 palabras
-    if '#critica' in message_text and word_count < 25:  # ~100 palabras = ~25 palabras sin contar hashtags
-        total_points -= 7  # Reducir puntos si no cumple criterio
-        bonus_text += " (Crítica necesita más desarrollo)"
-    
-    # Para #reseña: requiere mínimo 50 palabras  
-    elif '#reseña' in message_text and word_count < 15:
-        total_points -= 4
-        bonus_text += " (Reseña necesita más detalle)"
-    
-    # Bonus por mensaje detallado
-    if len(original_text) > 150:
-        total_points += 2
-        bonus_text += " (+2 bonus detalle)"
-    
-    # Bonus por participación en reto diario
-    today = datetime.date.today().strftime('%d/%m')
-    if any(keyword in message_text for keyword in ['reto', 'desafío', 'hoy']):
-        total_points += 1
-        bonus_text += " (+1 bonus reto)"
+    for hashtag, points in found_hashtags:
+        hashtag_word = hashtag[1:]  # Remover el #
+        
+        # Verificar spam
+        if is_spam(user.id, hashtag):
+            warnings.append(f"⚠️ {hashtag}: Detectado spam. Usa hashtags con moderación.")
+            print(f"[DEBUG] 🚫 Spam detectado para {hashtag}")
+            continue
+        
+        # Validaciones especiales
+        word_count = count_words(message_text)
+        
+        if hashtag_word == "critica" and word_count < 25:
+            warnings.append(f"❌ {hashtag}: Necesitas análisis más profundo (mín. 100 palabras). Tienes ~{word_count*4} palabras.")
+            points = max(1, points // 2)  # Reducir puntos pero dar algo
+        elif hashtag_word in ["reseña", "resena"] and word_count < 15:
+            warnings.append(f"❌ {hashtag}: Necesitas reseña más detallada (mín. 50 palabras). Tienes ~{word_count*4} palabras.")
+            points = max(1, points // 2)  # Reducir puntos pero dar algo
+        
+        valid_hashtags.append((hashtag, points))
+        total_points += points
+        print(f"[DEBUG] ✅ {hashtag} = {points} puntos")
     
     if total_points <= 0:
-        return  # No dar puntos negativos
+        print(f"[DEBUG] ❌ Total de puntos = 0, no se procesará")
+        return
+    
+    # Bonus por mensaje detallado
+    bonus_text = ""
+    if len(message_text) > 150:
+        total_points += 2
+        bonus_text = " (+2 bonus detalle)"
+    
+    print(f"[DEBUG] 💎 Total de puntos a otorgar: {total_points}")
     
     try:
-        # Agregar puntos al usuario
-        primary_hashtag = unique_hashtags[0][0]
+        # Guardar en base de datos
+        primary_hashtag = valid_hashtags[0][0] if valid_hashtags else "#aporte"
         add_points(
             user_id=user.id,
             username=user.username or user.first_name,
             points=total_points,
             hashtag=primary_hashtag,
-            message_text=original_text[:100],
+            message_text=message_text[:200],  # Guardar más texto para contexto
             chat_id=chat.id,
             message_id=update.message.message_id,
             context=context
         )
         
-        # Crear respuesta variada
+        print(f"[DEBUG] ✅ Puntos guardados en BD exitosamente")
+        
+        # Crear respuesta
+        hashtags_list = ", ".join([h[0] for h, p in valid_hashtags])
+        
         responses = [
             "¡Excelente aporte cinéfilo!",
             "¡Puntos ganados!",
-            "¡Gran contribución!",
-            "¡Sigue así, cinéfilo!"
+            "¡Gran contribución al cine!",
+            "¡Sigue así, cinéfilo!",
+            "¡Fantástico análisis!",
+            "¡Perfecto para el grupo!"
         ]
         
-        hashtags_list = ", ".join([h[0] for h in unique_hashtags])
         random_response = random.choice(responses)
         
-        response = f"""✅ *{random_response}* 🎬
+        response = f"""✅ **{random_response}** 🎬
 
 👤 {user.mention_html()}
 🏷️ {hashtags_list}  
-💎 *\\+{total_points} puntos*{bonus_text}
+💎 **+{total_points} puntos**{bonus_text}
 
-🎭 ¡Sigue compartiendo tu pasión por el cine\\! 🍿"""
+🎭 ¡Sigue compartiendo tu pasión por el cine! 🍿"""
+        
+        # Agregar advertencias si las hay
+        if warnings:
+            response += f"\n\n⚠️ **Notas:**\n" + "\n".join(warnings)
         
         await update.message.reply_text(
             response, 
-            parse_mode='MarkdownV2',
+            parse_mode='HTML',
             reply_to_message_id=update.message.message_id
         )
         
-        logger.info(f"Usuario {user.id} ganó {total_points} puntos con hashtags: {hashtags_list}")
+        print(f"[DEBUG] ✅ Respuesta enviada correctamente")
+        logger.info(f"Usuario {user.id} ganó {total_points} puntos con: {hashtags_list}")
         
     except Exception as e:
-        logger.error(f"Error en handle_hashtags: {e}")
-        # Respuesta simple en caso de error
-        await update.message.reply_text(f"✅ ¡Puntos ganados! +{total_points} pts 🎬")
+        logger.error(f"❌ ERROR en handle_hashtags: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Respuesta de emergencia
+        try:
+            await update.message.reply_text(f"✅ ¡Puntos ganados! +{total_points} pts 🎬")
+        except:
+            print(f"[DEBUG] ❌ No se pudo enviar ni la respuesta de emergencia")
+
+    print(f"[DEBUG] 🏁 handle_hashtags terminado para {user.username or user.first_name}")

@@ -726,7 +726,7 @@ correct_answer = ""
 points = 0
 
 # Línea 725-726 (mantener como está)
-    points = 0
+points = 0
 
     # CORRECCIÓN: Asegurar que empiece con 'if'
     if game_type == "guess_movie":

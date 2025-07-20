@@ -253,7 +253,7 @@ async def handle_hashtags(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         print(f"[DEBUG] ✅ Datos guardados exitosamente")
         
-        # Crear respuesta
+        # Crear respuesta - FORMATEO CORREGIDO
         hashtags_list = ", ".join([h[0] for h, p in valid_hashtags])
         
         responses = [
@@ -267,17 +267,18 @@ async def handle_hashtags(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         random_response = random.choice(responses)
         
-        response = f"""✅ **{random_response}** 🎬
+        # ✅ CORRECCIÓN CRÍTICA: Usar solo HTML, eliminar ** que causa conflicto
+        response = f"""✅ <b>{random_response}</b> 🎬
 
 👤 {user.mention_html()}
 🏷️ {hashtags_list}  
-💎 **+{total_points} puntos**{bonus_text}
+💎 <b>+{total_points} puntos</b>{bonus_text}
 
 🎭 ¡Sigue compartiendo tu pasión por el cine! 🍿"""
         
         # Agregar advertencias si las hay
         if warnings:
-            response += f"\n\n⚠️ **Notas:**\n" + "\n".join(warnings)
+            response += f"\n\n⚠️ <b>Notas:</b>\n" + "\n".join(warnings)
         
         await update.message.reply_text(
             response, 
@@ -293,7 +294,7 @@ async def handle_hashtags(update: Update, context: ContextTypes.DEFAULT_TYPE):
         import traceback
         traceback.print_exc()
         
-        # Respuesta de emergencia
+        # Respuesta de emergencia - TAMBIÉN CORREGIDA
         try:
             await update.message.reply_text(f"✅ ¡Puntos ganados! +{total_points} pts 🎬")
             print(f"[DEBUG] 🆘 Respuesta de emergencia enviada")

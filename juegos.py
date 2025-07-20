@@ -729,7 +729,7 @@ points = 0
 points = 0
 
     # CORRECCIÓN: Asegurar que empiece con 'if'
-    if game_type == "guess_movie":
+if game_type == "guess_movie":
         correct_answer = game["movie"]["title"]
         # Puntos disminuyen según pistas usadas (mínimo 3 puntos)
         points = max(game["movie"]["points"] - (game["current_clue"] * 3), 3)

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 # Hashtags válidos para el sistema de puntos (CORREGIDOS)
 VALID_HASHTAGS = {
-    '#critica': 10,      # Análisis profundo, mínimo 20 palabras
+    '#critica': 10,      # Análisis profundo, mínimo 100 palabras
     '#reseña': 7,        # Reseña detallada, mínimo 50 palabras
     '#recomendacion': 5, # Formato específico requerido
     '#debate': 4,
@@ -111,59 +111,73 @@ Comienza usando hashtags como **#cinefilo #pelicula #critica**
         await update.message.reply_text("¡Bienvenido al Bot Cinéfilo! Usa /help para más información.")
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Comando de ayuda completa CORREGIDO"""
+    """Comando de ayuda completa - SINCRONIZADO CON FUNCIONES"""
     help_text = """🎬 *GUÍA COMPLETA DEL BOT CINÉFILO*
 
 📊 *SISTEMA DE PUNTOS*
 Gana puntos usando hashtags en tus mensajes:
 
 *Hashtags de Alto Valor:*
-• *#critica* \\- 10 pts \\(mínimo 100 palabras\\)
-• *#reseña* \\- 7 pts \\(mínimo 50 palabras\\)  
-• *#recomendacion* \\- 5 pts \\(formato: Título, País, Año\\)
+• *\\#critica* \\- 10 pts \\(análisis profundo\\)
+• *\\#reseña* \\- 7 pts \\(reseña detallada\\)  
+• *\\#recomendacion* \\- 5 pts \\(incluye datos específicos\\)
 
 *Hashtags de Participación:*
-• *#debate* \\- 4 pts
-• *#aporte* \\- 3 pts
-• *#cinefilo*, *#pelicula*, *#cine* \\- 3 pts
-• *#pregunta* \\- 2 pts
-• *#spoiler* \\- 1 pt
+• *\\#debate* \\- 4 pts \\(discusión cinematográfica\\)
+• *\\#aporte* \\- 3 pts \\(contribución al grupo\\)
+• *\\#cinefilo* \\- 3 pts \\(pasión por el cine\\)
+• *\\#pelicula*, *\\#cine*, *\\#serie* \\- 3 pts
+• *\\#director*, *\\#oscar*, *\\#festival* \\- 3 pts
+• *\\#documental*, *\\#animacion*, *\\#clasico* \\- 3 pts
+• *\\#independiente* \\- 3 pts
+• *\\#actor*, *\\#genero*, *\\#pregunta* \\- 2 pts
+• *\\#spoiler* \\- 1 pt \\(marca contenido sensible\\)
 
-🎮 *JUEGOS DISPONIBLES*
+🎮 *JUEGOS \\(Próximamente\\)*
 • `/cinematrivia` \\- Trivia con opciones múltiples
 • `/adivinapelicula` \\- Adivina película por pistas
 • `/emojipelicula` \\- Adivina película por emojis
-• `/pista` \\- Pedir ayuda en juego activo
-• `/rendirse` \\- Abandonar juego actual
 
-📈 *COMANDOS DE INFORMACIÓN*
-• `/ranking` \\- Top 10 usuarios globales
+📈 *COMANDOS DISPONIBLES*
+• `/start` \\- Iniciar y conocer el bot
+• `/help` \\- Esta guía completa
+• `/ranking` \\- Top 10 usuarios del grupo
 • `/miperfil` \\- Tus estadísticas personales
 • `/reto` \\- Ver reto diario actual
 
-🎯 *RETOS Y BONIFICACIONES*
-• *Reto Diario:* Actividades diarias con bonus extra
-• *Bonus por longitud:* \\+2 puntos por mensajes de 100\\+ caracteres
-• *Bonus por participación:* Puntos extra en retos especiales
+🎯 *SISTEMA DE BONIFICACIONES*
+• *\\+2 pts* por mensajes detallados \\(150\\+ caracteres\\)
+• *\\+1 pt* por participar en retos diarios
+• *Validaciones especiales:*
+  \\- \\#critica requiere análisis desarrollado
+  \\- \\#reseña necesita descripción detallada
 
 🏆 *SISTEMA DE NIVELES*
-1️⃣ *Novato Cinéfilo* \\(0\\-99 pts\\)
-2️⃣ *Aficionado* \\(100\\-249 pts\\)
-3️⃣ *Crítico Amateur* \\(250\\-499 pts\\)
-4️⃣ *Experto Cinematográfico* \\(500\\-999 pts\\)
-5️⃣ *Maestro del Séptimo Arte* \\(1000\\+ pts\\)
+1️⃣ *Novato Cinéfilo* \\(0\\-99 pts\\) 🌱
+2️⃣ *Aficionado* \\(100\\-249 pts\\) 🎭
+3️⃣ *Crítico Amateur* \\(250\\-499 pts\\) 🎬
+4️⃣ *Experto Cinematográfico* \\(500\\-999 pts\\) 🏆
+5️⃣ *Maestro del Séptimo Arte* \\(1000\\+ pts\\) 👑
 
 💡 *CONSEJOS PARA MAXIMIZAR PUNTOS*
-• Para *#recomendacion*: Usa formato "Título, País, Año"
-• Para *#reseña*: Escribe al menos 50 palabras descriptivas
-• Para *#critica*: Desarrolla análisis de 100\\+ palabras
-• Evita spam: Máximo 3 hashtags iguales cada 5 minutos
+• Combina múltiples hashtags únicos en un mensaje
+• Escribe análisis detallados para \\#critica
+• Participa en el reto diario \\(/reto\\)
+• Contribuye con \\#aporte y \\#debate
+• Evita repetir el mismo hashtag muy seguido
+
+📋 *CÓMO USAR EL BOT*
+1\\. Escribe mensajes o aportes sobre cine con hashtags
+2\\. El bot detecta automáticamente los hashtags válidos
+3\\. Recibes puntos y feedback inmediato
+4\\. Consulta tu progreso con /miperfil
+5\\. Compite en el /ranking con otros usuarios
 
 ⚠️ *NORMAS DEL GRUPO*
-• Contenido relacionado con cine únicamente
+• Solo contenido relacionado con cine y series
 • Respeto en debates y discusiones  
-• No spam ni contenido comercial
-• Los spoilers deben marcarse con #spoiler
+• Marca spoilers con \\#spoiler
+• No spam de hashtags repetidos
 
 ¡Diviértete compartiendo tu pasión por el cine\\! 🍿"""
     
@@ -176,8 +190,8 @@ Gana puntos usando hashtags en tus mensajes:
         simple_help = """🎬 GUÍA DEL BOT CINÉFILO
 
 📊 SISTEMA DE PUNTOS:
-• #critica - 10 pts (mínimo 100 palabras)
-• #reseña - 7 pts (mínimo 50 palabras)  
+• #critica - 10 pts (mínimo 20 palabras)
+• #reseña - 15 pts (mínimo 50 palabras)  
 • #recomendacion - 5 pts
 • #debate - 4 pts
 • #aporte, #cinefilo, #pelicula - 3 pts

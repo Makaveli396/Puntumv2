@@ -226,7 +226,7 @@ async def cmd_cinematrivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-    await _auto_async_func_3(update, context)
+        await update.message.reply_text(
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -262,8 +262,8 @@ async def cmd_cinematrivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Selecciona tu respuesta:
     """
     
-    await _auto_async_func_4(update, context)
-        trivia_text, 
+    await update.message.reply_text(
+        trivia_text,
         reply_markup=reply_markup,
         parse_mode='Markdown'
     )

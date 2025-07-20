@@ -720,43 +720,31 @@ async def handle_game_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     game_type = game["type"]
     
     # Verificar respuesta según tipo de juego
-correct = False
-correct_answer = ""
-points = 0
+    correct = False
+    correct_answer = ""
+    points = 0
 
-# LÍNEAS 727-740 CORREGIDAS - Reemplaza desde línea 727 hasta línea 740
-
-# Verificar respuesta según tipo de juego
-correct = False
-correct_answer = ""
-points = 0
-
-if game_type == "guess_movie":
-    correct_answer = game["movie"]["title"]
-    # Puntos disminuyen según pistas usadas (mínimo 3 puntos)
-    points = max(game["movie"]["points"] - (game["current_clue"] * 3), 3)  # ✅ CORREGIDO
-    correct = is_similar_answer(message_text, correct_answer)
-    
-elif game_type == "emoji_movie":
-    correct_answer = game["movie"]["title"]
-    points = game["movie"]["points"]
-    correct = is_similar_answer(message_text, correct_answer)
+    if game_type == "guess_movie":
+        correct_answer = game["movie"]["title"]
+        # Puntos disminuyen según pistas usadas (mínimo 3 puntos)
+        points = max(game["movie"]["points"] - (game["current_clue"] * 3), 3)
+        correct = is_similar_answer(message_text, correct_answer)
         
-elif game_type == "guess_director":
-    correct_answer = game["director"]["director"]
-    points = max(game["director"]["points"] - (game["current_clue"] * 3), 3)
-    correct = is_similar_answer(message_text, correct_answer)
-    
-elif game_type == "guess_quote":
-    correct_answer = game["quote"]["movie"]
-    points = game["quote"]["points"]
-    correct = is_similar_answer(message_text, correct_answer)
+    elif game_type == "emoji_movie":
+        correct_answer = game["movie"]["title"]
+        points = game["movie"]["points"]
+        correct = is_similar_answer(message_text, correct_answer)
+            
+    elif game_type == "guess_director":
+        correct_answer = game["director"]["director"]
+        points = max(game["director"]["points"] - (game["current_clue"] * 3), 3)
+        correct = is_similar_answer(message_text, correct_answer)
         
     elif game_type == "guess_quote":
         correct_answer = game["quote"]["movie"]
         points = game["quote"]["points"]
         correct = is_similar_answer(message_text, correct_answer)
-    
+        
     else:
         return False  # Tipo de juego no reconocido
     

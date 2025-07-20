@@ -895,14 +895,12 @@ def get_game_handlers():
         ],
         'message_handler': handle_game_message
     }
-=======
 import random
 import asyncio
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from db import add_points
-
 # Almacenamiento de juegos activos (en memoria)
 active_games = {}
 game_stats = {}

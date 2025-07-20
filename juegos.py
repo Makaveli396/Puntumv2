@@ -725,30 +725,27 @@ correct = False
 correct_answer = ""
 points = 0
 
-# Línea 725-726 (mantener como está)
-points = 0
-
-    # CORRECCIÓN: Asegurar que empiece con 'if'
+# Lógica según el tipo de juego
 if game_type == "guess_movie":
-        correct_answer = game["movie"]["title"]
-        # Puntos disminuyen según pistas usadas (mínimo 3 puntos)
-        points = max(game["movie"]["points"] - (game["current_clue"] * 3), 3)
-        correct = is_similar_answer(message_text, correct_answer)
-    
-    elif game_type == "emoji_movie":
-        correct_answer = game["movie"]["title"]
-        points = game["movie"]["points"]
-        correct = is_similar_answer(message_text, correct_answer)
-    
-    elif game_type == "guess_director":
-        correct_answer = game["director"]["director"]
-        points = max(game["director"]["points"] - (game["current_clue"] * 3), 3)
-        correct = is_similar_answer(message_text, correct_answer)
-    
-    elif game_type == "guess_quote":
-        correct_answer = game["quote"]["movie"]
-        points = game["quote"]["points"]
-        correct = is_similar_answer(message_text, correct_answer)
+    correct_answer = game["movie"]["title"]
+    # Puntos disminuyen según pistas usadas (mínimo 3 puntos)
+    points = max(game["movie"]["points"] - (game["current_clue"] * 3), 3)
+    correct = is_similar_answer(message_text, correct_answer)
+
+elif game_type == "emoji_movie":
+    correct_answer = game["movie"]["title"]
+    points = game["movie"]["points"]
+    correct = is_similar_answer(message_text, correct_answer)
+
+elif game_type == "guess_director":
+    correct_answer = game["director"]["director"]
+    points = max(game["director"]["points"] - (game["current_clue"] * 3), 3)
+    correct = is_similar_answer(message_text, correct_answer)
+
+elif game_type == "guess_quote":
+    correct_answer = game["quote"]["quote"]
+    points = game["quote"]["points"]
+    correct = is_similar_answer(message_text, correct_answer)
     
     else:
         return False  # Tipo de juego no reconocido

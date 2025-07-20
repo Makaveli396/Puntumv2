@@ -23,7 +23,7 @@ from juegos import (
     cmd_emojipelicula,
     cmd_pista,
     cmd_rendirse,
-    cmd_estadisticasjuegos,  # CORREGIDO: cambié cmd_estadisticas_juegos por cmd_estadisticasjuegos
+    cmd_estadisticasjuegos,
     cmd_top_jugadores,
     handle_trivia_callback,
     handle_game_message
@@ -33,8 +33,10 @@ from sistema_autorizacion import (
     auth_required, cmd_solicitar_autorizacion, cmd_aprobar_grupo, cmd_ver_solicitudes
 )
 from comandos_basicos import (
-    cmd_start, cmd_help, cmd_ranking, cmd_miperfil, cmd_reto, handle_hashtags
+    cmd_start, cmd_help, cmd_ranking, cmd_miperfil, cmd_reto
 )
+# IMPORTACIÓN CORREGIDA: Importar handle_hashtags desde hashtags.py
+from hashtags import handle_hashtags
 
 # Configurar logging
 logging.basicConfig(
@@ -63,7 +65,7 @@ async def post_init(application):
     await application.bot.set_my_commands(commands)
     print("[INFO] ✅ Comandos del bot configurados")
     
-    # SOLUCIÓN: Crear la tarea de limpieza aquí, dentro del loop de eventos
+    # Crear la tarea de limpieza aquí, dentro del loop de eventos
     asyncio.create_task(cleanup_games_periodically())
     print("[INFO] ✅ Tarea de limpieza de juegos iniciada")
 
@@ -112,21 +114,20 @@ def main():
     app.add_handler(CommandHandler("emojipelicula", auth_required(cmd_emojipelicula)))
     app.add_handler(CommandHandler("pista", auth_required(cmd_pista)))
     app.add_handler(CommandHandler("rendirse", auth_required(cmd_rendirse)))
-    app.add_handler(CommandHandler("estadisticasjuegos", auth_required(cmd_estadisticasjuegos)))  # CORREGIDO
+    app.add_handler(CommandHandler("estadisticasjuegos", auth_required(cmd_estadisticasjuegos)))
     app.add_handler(CommandHandler("topjugadores", auth_required(cmd_top_jugadores)))
     
-    # Manejadores de callbacks y mensajes
+    # MANEJADOR DE HASHTAGS - DEBE IR ANTES que handle_game_message
+    # para que tenga prioridad en el procesamiento
+    hashtag_filter = filters.TEXT & ~filters.COMMAND & filters.Regex(r'#\w+')
+    app.add_handler(MessageHandler(hashtag_filter, auth_required(handle_hashtags)))
+    print("[INFO] ✅ Manejador de hashtags configurado")
+    
+    # Manejadores de callbacks y mensajes (van después)
     app.add_handler(CallbackQueryHandler(handle_trivia_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auth_required(handle_game_message)))
 
-    # Manejador de hashtags cinéfilos
-    hashtag_filter = filters.TEXT & ~filters.COMMAND & filters.Regex(r'#\w+')
-    app.add_handler(MessageHandler(hashtag_filter, auth_required(handle_hashtags)))
-
-    print("[INFO] ✅ Handlers configurados")
-
-    # SOLUCIÓN: No crear la tarea aquí, se hace en post_init
-    # asyncio.create_task(cleanup_games_periodically())  # ❌ ESTO CAUSABA EL ERROR
+    print("[INFO] ✅ Todos los handlers configurados")
 
     # Ejecutar en modo desarrollo o producción
     if os.environ.get("DEVELOPMENT"):

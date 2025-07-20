@@ -191,11 +191,11 @@ async def cleanup_games_periodically():
             if games_to_remove:
                 print(f"[INFO] Limpiados {len(games_to_remove)} juegos inactivos")
             
-            await asyncio.sleep(3600)  # 1 hora
+    await _auto_async_func_1(update, context)
             
         except Exception as e:
             print(f"[ERROR] Error en limpieza de juegos: {e}")
-            await asyncio.sleep(300)  # 5 minutos antes de reintentar
+    await _auto_async_func_2(update, context)
 
 def get_game_key(chat_id: int, user_id: int) -> str:
     """Generar clave única para el juego"""
@@ -223,7 +223,7 @@ async def cmd_cinematrivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_3(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -259,7 +259,7 @@ async def cmd_cinematrivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Selecciona tu respuesta:
     """
     
-    await update.message.reply_text(
+    await _auto_async_func_4(update, context)
         trivia_text, 
         reply_markup=reply_markup,
         parse_mode='Markdown'
@@ -268,17 +268,17 @@ Selecciona tu respuesta:
 async def handle_trivia_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manejar respuestas de trivia"""
     query = update.callback_query
-    await query.answer()
+    await _auto_async_func_5(update, context)
     
     try:
         _, game_key, answer = query.data.split('_', 2)
         answer = int(answer)
     except (ValueError, IndexError):
-        await query.message.edit_text("❌ Error procesando respuesta.")
+    await _auto_async_func_6(update, context)
         return
     
     if game_key not in active_games:
-        await query.message.edit_text("⏰ Este juego ha expirado.")
+    await _auto_async_func_7(update, context)
         return
     
     game = active_games[game_key]
@@ -321,7 +321,7 @@ async def handle_trivia_callback(update: Update, context: ContextTypes.DEFAULT_T
         """
         update_game_stats(user.id, "trivia", "loss")
     
-    await query.message.edit_text(result_text, parse_mode='HTML')
+    await _auto_async_func_8(update, context)
     del active_games[game_key]
 
 # =================== ADIVINA PELÍCULA ===================
@@ -332,7 +332,7 @@ async def cmd_adivinapelicula(update: Update, context: ContextTypes.DEFAULT_TYPE
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_9(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -365,7 +365,7 @@ Responde con el nombre de la película.
 🚪 Usa /rendirse para abandonar
     """
     
-    await update.message.reply_text(game_text, parse_mode='Markdown')
+    await _auto_async_func_10(update, context)
 
 async def cmd_pista(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Dar siguiente pista en el juego de adivinar película"""
@@ -374,17 +374,17 @@ async def cmd_pista(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key not in active_games:
-        await update.message.reply_text("❌ No tienes un juego activo.")
+    await _auto_async_func_11(update, context)
         return
     
     game = active_games[game_key]
     
     if game["type"] not in ["guess_movie", "guess_director"]:
-        await update.message.reply_text("❌ Este comando solo funciona en juegos con pistas.")
+    await _auto_async_func_12(update, context)
         return
     
     if game["current_clue"] >= 3:
-        await update.message.reply_text("❌ Ya se han dado todas las pistas disponibles.")
+    await _auto_async_func_13(update, context)
         return
     
     game["current_clue"] += 1
@@ -427,7 +427,7 @@ Responde con el nombre del director.
     
     pista_text += "\n🚪 Usa /rendirse para abandonar"
     
-    await update.message.reply_text(pista_text, parse_mode='Markdown')
+    await _auto_async_func_14(update, context)
 
 # =================== EMOJI PELÍCULA ===================
 async def cmd_emojipelicula(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -437,7 +437,7 @@ async def cmd_emojipelicula(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_15(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -467,7 +467,7 @@ Responde con el nombre de la película.
 🚪 Usa /rendirse para abandonar
     """
     
-    await update.message.reply_text(emoji_text, parse_mode='Markdown')
+    await _auto_async_func_16(update, context)
 
 # =================== ADIVINA DIRECTOR ===================
 async def cmd_adivinadirector(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -477,7 +477,7 @@ async def cmd_adivinadirector(update: Update, context: ContextTypes.DEFAULT_TYPE
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_17(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -514,7 +514,7 @@ Responde con el nombre del director.
 🚪 Usa /rendirse para abandonar
     """
     
-    await update.message.reply_text(director_text, parse_mode='Markdown')
+    await _auto_async_func_18(update, context)
 
 # =================== ADIVINA FRASE ===================
 async def cmd_adivinafrase(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -524,7 +524,7 @@ async def cmd_adivinafrase(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_19(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -554,7 +554,7 @@ Responde con el nombre de la película.
 🚪 Usa /rendirse para abandonar
     """
     
-    await update.message.reply_text(quote_text, parse_mode='Markdown')
+    await _auto_async_func_20(update, context)
 
 # =================== RENDERIRSE ===================
 async def cmd_rendirse(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -564,7 +564,7 @@ async def cmd_rendirse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key not in active_games:
-        await update.message.reply_text("❌ No tienes un juego activo.")
+    await _auto_async_func_21(update, context)
         return
     
     game = active_games[game_key]
@@ -596,7 +596,7 @@ async def cmd_rendirse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     del active_games[game_key]
     
     response_text += "\n\n¡Inténtalo de nuevo cuando quieras! 🎮"
-    await update.message.reply_text(response_text, parse_mode='Markdown')
+    await _auto_async_func_22(update, context)
 
 # =================== ESTADÍSTICAS DE JUEGOS ===================
 async def cmd_estadisticasjuegos(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -604,7 +604,7 @@ async def cmd_estadisticasjuegos(update: Update, context: ContextTypes.DEFAULT_T
     user = update.effective_user
     
     if user.id not in game_stats:
-        await update.message.reply_text(
+    await _auto_async_func_23(update, context)
             "📊 Aún no tienes estadísticas de juegos.\n"
             "¡Juega algunos juegos para ver tus stats!"
         )
@@ -646,13 +646,13 @@ async def cmd_estadisticasjuegos(update: Update, context: ContextTypes.DEFAULT_T
     stats_text += f"🏆 Victorias totales: {total_wins}\n"
     stats_text += f"📊 Win Rate general: {overall_win_rate:.1f}%\n"
     
-    await update.message.reply_text(stats_text, parse_mode='Markdown')
+    await _auto_async_func_24(update, context)
 
 # =================== TOP JUGADORES ===================
 async def cmd_top_jugadores(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ver ranking global de jugadores de juegos"""
     if not game_stats:
-        await update.message.reply_text(
+    await _auto_async_func_25(update, context)
             "📊 Aún no hay estadísticas de juegos.\n"
             "¡Sean los primeros en jugar!"
         )
@@ -682,7 +682,7 @@ async def cmd_top_jugadores(update: Update, context: ContextTypes.DEFAULT_TYPE):
     player_rankings.sort(key=lambda x: (x["wins"], x["win_rate"]), reverse=True)
     
     if not player_rankings:
-        await update.message.reply_text("📊 No hay suficientes datos para mostrar un ranking.")
+    await _auto_async_func_26(update, context)
         return
     
     ranking_text = "🏆 **TOP JUGADORES - RANKING GLOBAL** 🎮\n\n"
@@ -704,7 +704,7 @@ async def cmd_top_jugadores(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     ranking_text += "🎬 ¡Sigue jugando para subir en el ranking!"
     
-    await update.message.reply_text(ranking_text, parse_mode='Markdown')
+    await _auto_async_func_27(update, context)
 
 # =================== MANEJO DE RESPUESTAS DE JUEGOS ===================
 async def handle_game_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -775,13 +775,13 @@ else:
         """
         update_game_stats(user.id, game_type, "win")
         
-        await update.message.reply_html(result_text)
+    await _auto_async_func_28(update, context)
         del active_games[game_key]
         return True
         
     else:
         # Respuesta incorrecta - el juego continúa
-        await update.message.reply_text(
+    await _auto_async_func_29(update, context)
             f"❌ No es correcto. ¡Sigue intentando!\n"
             f"💡 Usa /pista para más ayuda (si está disponible)\n"
             f"🚪 Usa /rendirse para abandonar"
@@ -871,7 +871,7 @@ async def cmd_juegos(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ¡Demuestra tu conocimiento cinematográfico! 🍿
     """
     
-    await update.message.reply_text(games_text, parse_mode='Markdown')
+    await _auto_async_func_30(update, context)
 
 # =================== EXPORTAR FUNCIONES ===================
 def get_game_handlers():
@@ -1085,11 +1085,11 @@ async def cleanup_games_periodically():
             if games_to_remove:
                 print(f"[INFO] Limpiados {len(games_to_remove)} juegos inactivos")
             
-            await asyncio.sleep(3600)  # 1 hora
+    await _auto_async_func_31(update, context)
             
         except Exception as e:
             print(f"[ERROR] Error en limpieza de juegos: {e}")
-            await asyncio.sleep(300)  # 5 minutos antes de reintentar
+    await _auto_async_func_32(update, context)
 
 def get_game_key(chat_id: int, user_id: int) -> str:
     """Generar clave única para el juego"""
@@ -1117,7 +1117,7 @@ async def cmd_cinematrivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_33(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -1153,7 +1153,7 @@ async def cmd_cinematrivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Selecciona tu respuesta:
     """
     
-    await update.message.reply_text(
+    await _auto_async_func_34(update, context)
         trivia_text, 
         reply_markup=reply_markup,
         parse_mode='Markdown'
@@ -1162,17 +1162,17 @@ Selecciona tu respuesta:
 async def handle_trivia_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manejar respuestas de trivia"""
     query = update.callback_query
-    await query.answer()
+    await _auto_async_func_35(update, context)
     
     try:
         _, game_key, answer = query.data.split('_', 2)
         answer = int(answer)
     except (ValueError, IndexError):
-        await query.message.edit_text("❌ Error procesando respuesta.")
+    await _auto_async_func_36(update, context)
         return
     
     if game_key not in active_games:
-        await query.message.edit_text("⏰ Este juego ha expirado.")
+    await _auto_async_func_37(update, context)
         return
     
     game = active_games[game_key]
@@ -1215,7 +1215,7 @@ async def handle_trivia_callback(update: Update, context: ContextTypes.DEFAULT_T
         """
         update_game_stats(user.id, "trivia", "loss")
     
-    await query.message.edit_text(result_text, parse_mode='HTML')
+    await _auto_async_func_38(update, context)
     del active_games[game_key]
 
 # =================== ADIVINA PELÍCULA ===================
@@ -1226,7 +1226,7 @@ async def cmd_adivinapelicula(update: Update, context: ContextTypes.DEFAULT_TYPE
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_39(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -1259,7 +1259,7 @@ Responde con el nombre de la película.
 🚪 Usa /rendirse para abandonar
     """
     
-    await update.message.reply_text(game_text, parse_mode='Markdown')
+    await _auto_async_func_40(update, context)
 
 async def cmd_pista(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Dar siguiente pista en el juego de adivinar película"""
@@ -1268,17 +1268,17 @@ async def cmd_pista(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key not in active_games:
-        await update.message.reply_text("❌ No tienes un juego activo.")
+    await _auto_async_func_41(update, context)
         return
     
     game = active_games[game_key]
     
     if game["type"] not in ["guess_movie", "guess_director"]:
-        await update.message.reply_text("❌ Este comando solo funciona en juegos con pistas.")
+    await _auto_async_func_42(update, context)
         return
     
     if game["current_clue"] >= 3:
-        await update.message.reply_text("❌ Ya se han dado todas las pistas disponibles.")
+    await _auto_async_func_43(update, context)
         return
     
     game["current_clue"] += 1
@@ -1321,7 +1321,7 @@ Responde con el nombre del director.
     
     pista_text += "\n🚪 Usa /rendirse para abandonar"
     
-    await update.message.reply_text(pista_text, parse_mode='Markdown')
+    await _auto_async_func_44(update, context)
 
 # =================== EMOJI PELÍCULA ===================
 async def cmd_emojipelicula(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1331,7 +1331,7 @@ async def cmd_emojipelicula(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_45(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -1361,7 +1361,7 @@ Responde con el nombre de la película.
 🚪 Usa /rendirse para abandonar
     """
     
-    await update.message.reply_text(emoji_text, parse_mode='Markdown')
+    await _auto_async_func_46(update, context)
 
 # =================== ADIVINA DIRECTOR ===================
 async def cmd_adivinadirector(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1371,7 +1371,7 @@ async def cmd_adivinadirector(update: Update, context: ContextTypes.DEFAULT_TYPE
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_47(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -1408,7 +1408,7 @@ Responde con el nombre del director.
 🚪 Usa /rendirse para abandonar
     """
     
-    await update.message.reply_text(director_text, parse_mode='Markdown')
+    await _auto_async_func_48(update, context)
 
 # =================== ADIVINA FRASE ===================
 async def cmd_adivinafrase(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1418,7 +1418,7 @@ async def cmd_adivinafrase(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key in active_games:
-        await update.message.reply_text(
+    await _auto_async_func_49(update, context)
             "🎮 Ya tienes un juego activo.\n"
             "Usa /rendirse para abandonar el juego actual."
         )
@@ -1448,7 +1448,7 @@ Responde con el nombre de la película.
 🚪 Usa /rendirse para abandonar
     """
     
-    await update.message.reply_text(quote_text, parse_mode='Markdown')
+    await _auto_async_func_50(update, context)
 
 # =================== RENDERIRSE ===================
 async def cmd_rendirse(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1458,7 +1458,7 @@ async def cmd_rendirse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     game_key = get_game_key(chat.id, user.id)
     
     if game_key not in active_games:
-        await update.message.reply_text("❌ No tienes un juego activo.")
+    await _auto_async_func_51(update, context)
         return
     
     game = active_games[game_key]
@@ -1490,7 +1490,7 @@ async def cmd_rendirse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     del active_games[game_key]
     
     response_text += "\n\n¡Inténtalo de nuevo cuando quieras! 🎮"
-    await update.message.reply_text(response_text, parse_mode='Markdown')
+    await _auto_async_func_52(update, context)
 
 # =================== ESTADÍSTICAS DE JUEGOS ===================
 async def cmd_estadisticasjuegos(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1498,7 +1498,7 @@ async def cmd_estadisticasjuegos(update: Update, context: ContextTypes.DEFAULT_T
     user = update.effective_user
     
     if user.id not in game_stats:
-        await update.message.reply_text(
+    await _auto_async_func_53(update, context)
             "📊 Aún no tienes estadísticas de juegos.\n"
             "¡Juega algunos juegos para ver tus stats!"
         )
@@ -1540,13 +1540,13 @@ async def cmd_estadisticasjuegos(update: Update, context: ContextTypes.DEFAULT_T
     stats_text += f"🏆 Victorias totales: {total_wins}\n"
     stats_text += f"📊 Win Rate general: {overall_win_rate:.1f}%\n"
     
-    await update.message.reply_text(stats_text, parse_mode='Markdown')
+    await _auto_async_func_54(update, context)
 
 # =================== TOP JUGADORES ===================
 async def cmd_top_jugadores(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ver ranking global de jugadores de juegos"""
     if not game_stats:
-        await update.message.reply_text(
+    await _auto_async_func_55(update, context)
             "📊 Aún no hay estadísticas de juegos.\n"
             "¡Sean los primeros en jugar!"
         )
@@ -1576,7 +1576,7 @@ async def cmd_top_jugadores(update: Update, context: ContextTypes.DEFAULT_TYPE):
     player_rankings.sort(key=lambda x: (x["wins"], x["win_rate"]), reverse=True)
     
     if not player_rankings:
-        await update.message.reply_text("📊 No hay suficientes datos para mostrar un ranking.")
+    await _auto_async_func_56(update, context)
         return
     
     ranking_text = "🏆 **TOP JUGADORES - RANKING GLOBAL** 🎮\n\n"
@@ -1598,7 +1598,7 @@ async def cmd_top_jugadores(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     ranking_text += "🎬 ¡Sigue jugando para subir en el ranking!"
     
-    await update.message.reply_text(ranking_text, parse_mode='Markdown')
+    await _auto_async_func_57(update, context)
 
 # =================== MANEJO DE RESPUESTAS DE JUEGOS ===================
 async def handle_game_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1666,13 +1666,13 @@ async def handle_game_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         """
         update_game_stats(user.id, game_type, "win")
         
-        await update.message.reply_html(result_text)
+    await _auto_async_func_58(update, context)
         del active_games[game_key]
         return True
         
     else:
         # Respuesta incorrecta - el juego continúa
-        await update.message.reply_text(
+    await _auto_async_func_59(update, context)
             f"❌ No es correcto. ¡Sigue intentando!\n"
             f"💡 Usa /pista para más ayuda (si está disponible)\n"
             f"🚪 Usa /rendirse para abandonar"
@@ -1762,7 +1762,7 @@ async def cmd_juegos(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ¡Demuestra tu conocimiento cinematográfico! 🍿
     """
     
-    await update.message.reply_text(games_text, parse_mode='Markdown')
+    await _auto_async_func_60(update, context)
 
 # =================== EXPORTAR FUNCIONES ===================
 def get_game_handlers():
@@ -1785,3 +1785,185 @@ def get_game_handlers():
         ],
         'message_handler': handle_game_message
     }
+
+# Funciones async generadas automáticamente:
+
+async def _auto_async_func_1(update, context):
+                 await asyncio.sleep(3600)  # 1 hora
+
+async def _auto_async_func_2(update, context):
+                 await asyncio.sleep(300)  # 5 minutos antes de reintentar
+
+async def _auto_async_func_3(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_4(update, context):
+         await update.message.reply_text(
+
+async def _auto_async_func_5(update, context):
+         await query.answer()
+
+async def _auto_async_func_6(update, context):
+             await query.message.edit_text("❌ Error procesando respuesta.")
+
+async def _auto_async_func_7(update, context):
+             await query.message.edit_text("⏰ Este juego ha expirado.")
+
+async def _auto_async_func_8(update, context):
+         await query.message.edit_text(result_text, parse_mode='HTML')
+
+async def _auto_async_func_9(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_10(update, context):
+         await update.message.reply_text(game_text, parse_mode='Markdown')
+
+async def _auto_async_func_11(update, context):
+             await update.message.reply_text("❌ No tienes un juego activo.")
+
+async def _auto_async_func_12(update, context):
+             await update.message.reply_text("❌ Este comando solo funciona en juegos con pistas.")
+
+async def _auto_async_func_13(update, context):
+             await update.message.reply_text("❌ Ya se han dado todas las pistas disponibles.")
+
+async def _auto_async_func_14(update, context):
+         await update.message.reply_text(pista_text, parse_mode='Markdown')
+
+async def _auto_async_func_15(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_16(update, context):
+         await update.message.reply_text(emoji_text, parse_mode='Markdown')
+
+async def _auto_async_func_17(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_18(update, context):
+         await update.message.reply_text(director_text, parse_mode='Markdown')
+
+async def _auto_async_func_19(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_20(update, context):
+         await update.message.reply_text(quote_text, parse_mode='Markdown')
+
+async def _auto_async_func_21(update, context):
+             await update.message.reply_text("❌ No tienes un juego activo.")
+
+async def _auto_async_func_22(update, context):
+         await update.message.reply_text(response_text, parse_mode='Markdown')
+
+async def _auto_async_func_23(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_24(update, context):
+         await update.message.reply_text(stats_text, parse_mode='Markdown')
+
+async def _auto_async_func_25(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_26(update, context):
+             await update.message.reply_text("📊 No hay suficientes datos para mostrar un ranking.")
+
+async def _auto_async_func_27(update, context):
+         await update.message.reply_text(ranking_text, parse_mode='Markdown')
+
+async def _auto_async_func_28(update, context):
+             await update.message.reply_html(result_text)
+
+async def _auto_async_func_29(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_30(update, context):
+         await update.message.reply_text(games_text, parse_mode='Markdown')
+
+async def _auto_async_func_31(update, context):
+                 await asyncio.sleep(3600)  # 1 hora
+
+async def _auto_async_func_32(update, context):
+                 await asyncio.sleep(300)  # 5 minutos antes de reintentar
+
+async def _auto_async_func_33(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_34(update, context):
+         await update.message.reply_text(
+
+async def _auto_async_func_35(update, context):
+         await query.answer()
+
+async def _auto_async_func_36(update, context):
+             await query.message.edit_text("❌ Error procesando respuesta.")
+
+async def _auto_async_func_37(update, context):
+             await query.message.edit_text("⏰ Este juego ha expirado.")
+
+async def _auto_async_func_38(update, context):
+         await query.message.edit_text(result_text, parse_mode='HTML')
+
+async def _auto_async_func_39(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_40(update, context):
+         await update.message.reply_text(game_text, parse_mode='Markdown')
+
+async def _auto_async_func_41(update, context):
+             await update.message.reply_text("❌ No tienes un juego activo.")
+
+async def _auto_async_func_42(update, context):
+             await update.message.reply_text("❌ Este comando solo funciona en juegos con pistas.")
+
+async def _auto_async_func_43(update, context):
+             await update.message.reply_text("❌ Ya se han dado todas las pistas disponibles.")
+
+async def _auto_async_func_44(update, context):
+         await update.message.reply_text(pista_text, parse_mode='Markdown')
+
+async def _auto_async_func_45(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_46(update, context):
+         await update.message.reply_text(emoji_text, parse_mode='Markdown')
+
+async def _auto_async_func_47(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_48(update, context):
+         await update.message.reply_text(director_text, parse_mode='Markdown')
+
+async def _auto_async_func_49(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_50(update, context):
+         await update.message.reply_text(quote_text, parse_mode='Markdown')
+
+async def _auto_async_func_51(update, context):
+             await update.message.reply_text("❌ No tienes un juego activo.")
+
+async def _auto_async_func_52(update, context):
+         await update.message.reply_text(response_text, parse_mode='Markdown')
+
+async def _auto_async_func_53(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_54(update, context):
+         await update.message.reply_text(stats_text, parse_mode='Markdown')
+
+async def _auto_async_func_55(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_56(update, context):
+             await update.message.reply_text("📊 No hay suficientes datos para mostrar un ranking.")
+
+async def _auto_async_func_57(update, context):
+         await update.message.reply_text(ranking_text, parse_mode='Markdown')
+
+async def _auto_async_func_58(update, context):
+             await update.message.reply_html(result_text)
+
+async def _auto_async_func_59(update, context):
+             await update.message.reply_text(
+
+async def _auto_async_func_60(update, context):
+         await update.message.reply_text(games_text, parse_mode='Markdown')

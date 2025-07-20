@@ -157,32 +157,32 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Verificar si es grupo o chat privado
     chat_type = "grupo" if chat.type in ['group', 'supergroup'] else "chat privado"
     
-    welcome_message = f"""🎬 **¡Bienvenido al Bot Cinéfilo!** 🍿
+    welcome_message = f"""🎬 <b>¡Bienvenido al Bot Cinéfilo!</b> 🍿
 
 ¡Hola {user.mention_html()}! 👋
 
 Estás en un {chat_type} dedicado al séptimo arte.
 
-**🎯 ¿Qué puedes hacer aquí?**
+<b>🎯 ¿Qué puedes hacer aquí?</b>
 • Ganar puntos usando hashtags cinéfilos
 • Jugar trivia y juegos de películas  
 • Ver rankings y estadísticas
 • Completar retos diarios y semanales
 • Participar en debates cinematográficos
 
-**📋 Comandos principales:**
-• `/help` - Guía completa del bot
-• `/ranking` - Ver top 10 usuarios
-• `/miperfil` - Tus estadísticas personales
-• `/reto` - Reto diario actual
+<b>📋 Comandos principales:</b>
+• /help - Guía completa del bot
+• /ranking - Ver top 10 usuarios
+• /miperfil - Tus estadísticas personales
+• /reto - Reto diario actual
 
-**🎮 Juegos disponibles:**
-• `/cinematrivia` - Trivia de películas
-• `/adivinapelicula` - Adivina por pistas
-• `/emojipelicula` - Adivina por emojis
+<b>🎮 Juegos disponibles:</b>
+• /cinematrivia - Trivia de películas
+• /adivinapelicula - Adivina por pistas
+• /emojipelicula - Adivina por emojis
 
-**💡 ¡Primer consejo!**
-Comienza usando hashtags como **#cinefilo #pelicula #critica** 
+<b>💡 ¡Primer consejo!</b>
+Comienza usando hashtags como <b>#cinefilo #pelicula #critica</b> 
 ¡Cada hashtag te da puntos diferentes!
 
 ¿Listo para convertirte en un maestro del séptimo arte? 🏆"""
@@ -200,81 +200,81 @@ Comienza usando hashtags como **#cinefilo #pelicula #critica**
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando de ayuda completa - SINCRONIZADO CON FUNCIONES"""
-    help_text = """🎬 *GUÍA COMPLETA DEL BOT CINÉFILO*
+    help_text = """🎬 <b>GUÍA COMPLETA DEL BOT CINÉFILO</b>
 
-📊 *SISTEMA DE PUNTOS*
+📊 <b>SISTEMA DE PUNTOS</b>
 Gana puntos usando hashtags en tus mensajes:
 
-*Hashtags de Alto Valor:*
-• *\\#critica* \\- 10 pts \\(análisis profundo\\)
-• *\\#reseña* \\- 7 pts \\(reseña detallada\\)  
-• *\\#recomendacion* \\- 5 pts \\(incluye datos específicos\\)
+<b>Hashtags de Alto Valor:</b>
+• <b>#critica</b> - 10 pts (análisis profundo)
+• <b>#reseña</b> - 7 pts (reseña detallada)  
+• <b>#recomendacion</b> - 5 pts (incluye datos específicos)
 
-*Hashtags de Participación:*
-• *\\#debate* \\- 4 pts \\(discusión cinematográfica\\)
-• *\\#aporte* \\- 3 pts \\(contribución al grupo\\)
-• *\\#cinefilo* \\- 3 pts \\(pasión por el cine\\)
-• *\\#pelicula*, *\\#cine*, *\\#serie* \\- 3 pts
-• *\\#director*, *\\#oscar*, *\\#festival* \\- 3 pts
-• *\\#documental*, *\\#animacion*, *\\#clasico* \\- 3 pts
-• *\\#independiente* \\- 3 pts
-• *\\#actor*, *\\#genero*, *\\#pregunta* \\- 2 pts
-• *\\#ranking* \\- 2 pts
-• *\\#spoiler* \\- 1 pt \\(marca contenido sensible\\)
+<b>Hashtags de Participación:</b>
+• <b>#debate</b> - 4 pts (discusión cinematográfica)
+• <b>#aporte</b> - 3 pts (contribución al grupo)
+• <b>#cinefilo</b> - 3 pts (pasión por el cine)
+• <b>#pelicula, #cine, #serie</b> - 3 pts
+• <b>#director, #oscar, #festival</b> - 3 pts
+• <b>#documental, #animacion, #clasico</b> - 3 pts
+• <b>#independiente</b> - 3 pts
+• <b>#actor, #genero, #pregunta</b> - 2 pts
+• <b>#ranking</b> - 2 pts
+• <b>#spoiler</b> - 1 pt (marca contenido sensible)
 
-🎮 *JUEGOS \\(Próximamente\\)*
-• `/cinematrivia` \\- Trivia con opciones múltiples
-• `/adivinapelicula` \\- Adivina película por pistas
-• `/emojipelicula` \\- Adivina por emojis
+🎮 <b>JUEGOS (Próximamente)</b>
+• /cinematrivia - Trivia con opciones múltiples
+• /adivinapelicula - Adivina película por pistas
+• /emojipelicula - Adivina por emojis
 
-📈 *COMANDOS DISPONIBLES*
-• `/start` \\- Iniciar y conocer el bot
-• `/help` \\- Esta guía completa
-• `/ranking` \\- Top 10 usuarios del grupo
-• `/miperfil` \\- Tus estadísticas personales
-• `/reto` \\- Ver reto diario actual
+📈 <b>COMANDOS DISPONIBLES</b>
+• /start - Iniciar y conocer el bot
+• /help - Esta guía completa
+• /ranking - Top 10 usuarios del grupo
+• /miperfil - Tus estadísticas personales
+• /reto - Ver reto diario actual
 
-🎯 *SISTEMA DE BONIFICACIONES*
-• *\\+2 pts* por mensajes detallados \\(150\\+ caracteres\\)
-• *\\+1 pt* por participar en retos diarios
-• *Validaciones especiales:*
-  \\- \\#critica requiere análisis desarrollado
-  \\- \\#reseña necesita descripción detallada
+🎯 <b>SISTEMA DE BONIFICACIONES</b>
+• <b>+2 pts</b> por mensajes detallados (150+ caracteres)
+• <b>+1 pt</b> por participar en retos diarios
+• <b>Validaciones especiales:</b>
+  - #critica requiere análisis desarrollado
+  - #reseña necesita descripción detallada
 
-🏆 *SISTEMA DE NIVELES*
-1️⃣ *Novato Cinéfilo* \\(0\\-99 pts\\) 🌱
-2️⃣ *Aficionado* \\(100\\-249 pts\\) 🎭
-3️⃣ *Crítico Amateur* \\(250\\-499 pts\\) 🎬
-4️⃣ *Experto Cinematográfico* \\(500\\-999 pts\\) 🏆
-5️⃣ *Maestro del Séptimo Arte* \\(1000\\+ pts\\) 👑
+🏆 <b>SISTEMA DE NIVELES</b>
+1️⃣ <b>Novato Cinéfilo</b> (0-99 pts) 🌱
+2️⃣ <b>Aficionado</b> (100-249 pts) 🎭
+3️⃣ <b>Crítico Amateur</b> (250-499 pts) 🎬
+4️⃣ <b>Experto Cinematográfico</b> (500-999 pts) 🏆
+5️⃣ <b>Maestro del Séptimo Arte</b> (1000+ pts) 👑
 
-💡 *CONSEJOS PARA MAXIMIZAR PUNTOS*
+💡 <b>CONSEJOS PARA MAXIMIZAR PUNTOS</b>
 • Combina múltiples hashtags únicos en un mensaje
-• Escribe análisis detallados para \\#critica
-• Participa en el reto diario \\(/reto\\)
-• Contribuye con \\#aporte y \\#debate
+• Escribe análisis detallados para #critica
+• Participa en el reto diario (/reto)
+• Contribuye con #aporte y #debate
 • Evita repetir el mismo hashtag muy seguido
 
-📋 *CÓMO USAR EL BOT*
-1\\. Escribe mensajes o aportes sobre cine con hashtags
-2\\. El bot detecta automáticamente los hashtags válidos
-3\\. Recibes puntos y feedback inmediato
-4\\. Consulta tu progreso con /miperfil
-5\\. Compite en el /ranking con otros usuarios
+📋 <b>CÓMO USAR EL BOT</b>
+1. Escribe mensajes o aportes sobre cine con hashtags
+2. El bot detecta automáticamente los hashtags válidos
+3. Recibes puntos y feedback inmediato
+4. Consulta tu progreso con /miperfil
+5. Compite en el /ranking con otros usuarios
 
-⚠️ *NORMAS DEL GRUPO*
+⚠️ <b>NORMAS DEL GRUPO</b>
 • Solo contenido relacionado con cine y series
 • Respeto en debates y discusiones  
-• Marca spoilers con \\#spoiler
+• Marca spoilers con #spoiler
 • No spam de hashtags repetidos
 
-¡Diviértete compartiendo tu pasión por el cine\\! 🍿"""
+¡Diviértete compartiendo tu pasión por el cine! 🍿"""
     
     try:
-        await update.message.reply_text(help_text, parse_mode='MarkdownV2')
+        await update.message.reply_text(help_text, parse_mode='HTML')
         logger.info(f"Usuario {update.effective_user.id} solicitó ayuda")
     except Exception as e:
-        logger.error(f"Error en cmd_help con MarkdownV2: {e}")
+        logger.error(f"Error en cmd_help: {e}")
         # Fallback sin formato
         simple_help = """🎬 GUÍA DEL BOT CINÉFILO
 
@@ -306,7 +306,7 @@ async def cmd_ranking(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
         
-        ranking_text = "🏆 *TOP 10 CINÉFILOS* 🎬\n\n"
+        ranking_text = "🏆 <b>TOP 10 CINÉFILOS</b> 🎬\n\n"
         
         medals = ["🥇", "🥈", "🥉"] + ["📍"] * 7
         
@@ -322,10 +322,10 @@ async def cmd_ranking(update: Update, context: ContextTypes.DEFAULT_TYPE):
             level_info = LEVEL_THRESHOLDS.get(level, (0, 0, "Novato", "🌱"))
             level_name, level_emoji = level_info[2], level_info[3]
             
-            ranking_text += f"{medal} *{i}\\.* {username}\n"
-            ranking_text += f"    {level_emoji} {points} puntos \\- {level_name}\n\n"
+            ranking_text += f"{medal} <b>{i}.</b> {username}\n"
+            ranking_text += f"    {level_emoji} {points} puntos - {level_name}\n\n"
         
-        await update.message.reply_text(ranking_text, parse_mode='MarkdownV2')
+        await update.message.reply_text(ranking_text, parse_mode='HTML')
         logger.info(f"Usuario {update.effective_user.id} consultó ranking")
         
     except Exception as e:
@@ -349,13 +349,13 @@ async def cmd_miperfil(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not stats:
             await update.message.reply_text(
                 "📊 Aún no tienes estadísticas registradas.\n\n"
-                "💡 *¿Cómo empezar a ganar puntos?*\n"
+                "💡 <b>¿Cómo empezar a ganar puntos?</b>\n"
                 "• Escribe mensajes con hashtags como #cinefilo #pelicula\n"
                 "• Participa en debates con #debate\n"
                 "• Comparte reseñas con #reseña\n"
                 "• Haz críticas detalladas con #critica\n\n"
                 "¡Tu primer mensaje con hashtag te dará tus primeros puntos! 🎬",
-                parse_mode='MarkdownV2'
+                parse_mode='HTML'
             )
             return
         
@@ -363,41 +363,43 @@ async def cmd_miperfil(update: Update, context: ContextTypes.DEFAULT_TYPE):
         level_info = LEVEL_THRESHOLDS.get(level, (0, 0, "Novato", "🌱"))
         level_name, level_emoji = level_info[2], level_info[3]
         
-        profile_text = f"""{level_emoji} *PERFIL DE {stats['username'].upper().replace('_', '\\_')}*
+        # Escapar caracteres especiales en el username para HTML
+        safe_username = stats['username'].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        
+        profile_text = f"""{level_emoji} <b>PERFIL DE {safe_username.upper()}</b>
 
-📊 *Estadísticas Generales:*
-💎 Puntos totales: *{stats['points']}*
-📝 Contribuciones: *{stats['count']}*
-🎯 Nivel: *{level} \\- {level_name}*
+📊 <b>Estadísticas Generales:</b>
+💎 Puntos totales: <b>{stats['points']}</b>
+📝 Contribuciones: <b>{stats['count']}</b>
+🎯 Nivel: <b>{level} - {level_name}</b>
 
-📈 *Progreso:*"""
+📈 <b>Progreso:</b>"""
         
         # Calcular puntos para siguiente nivel
         next_level_info = LEVEL_THRESHOLDS.get(level + 1)
         if next_level_info and level < 5:
             points_needed = next_level_info[0] - stats['points']
-            profile_text += f"\n⬆️ Faltan *{points_needed}* puntos para subir de nivel"
+            profile_text += f"\n⬆️ Faltan <b>{points_needed}</b> puntos para subir de nivel"
         else:
-            profile_text += f"\n🏆 ¡Nivel máximo alcanzado\\!"
+            profile_text += f"\n🏆 ¡Nivel máximo alcanzado!"
         
         # Información adicional si está disponible
         if 'member_since' in stats:
-            profile_text += f"\n\n👤 *Miembro desde:* {stats['member_since'][:10]}"
+            profile_text += f"\n\n👤 <b>Miembro desde:</b> {stats['member_since'][:10]}"
         
         if 'active_days' in stats:
-            profile_text += f"\n📅 *Días activos:* {len(stats['active_days'])}"
+            profile_text += f"\n📅 <b>Días activos:</b> {len(stats['active_days'])}"
         
         # Hashtags favoritos
         if stats.get('hashtag_counts'):
             top_hashtags = sorted(stats['hashtag_counts'].items(), 
                                 key=lambda x: x[1], reverse=True)[:3]
-            profile_text += f"\n\n🏷️ *Hashtags favoritos:*"
+            profile_text += f"\n\n🏷️ <b>Hashtags favoritos:</b>"
             for hashtag, count in top_hashtags:
                 if hashtag and hashtag != '(reto_diario)':
-                    clean_hashtag = hashtag.replace('_', '\\_').replace('#', '\\#')
-                    profile_text += f"\n   • {clean_hashtag}: {count} veces"
+                    profile_text += f"\n   • {hashtag}: {count} veces"
         
-        await update.message.reply_text(profile_text, parse_mode='MarkdownV2')
+        await update.message.reply_text(profile_text, parse_mode='HTML')
         logger.info(f"Usuario {user.id} consultó su perfil")
         
     except Exception as e:
@@ -418,29 +420,29 @@ async def cmd_reto(update: Update, context: ContextTypes.DEFAULT_TYPE):
         '#debate', '#aporte', '#pelicula'
     ], 3)
     
-    reto_text = f"""🎯 *RETO DIARIO* 📅 {today.strftime('%d/%m/%Y')}
+    reto_text = f"""🎯 <b>RETO DIARIO</b> 📅 {today.strftime('%d/%m/%Y')}
 
 {daily_challenge}
 
-💡 *Cómo participar:*
+💡 <b>Cómo participar:</b>
 1️⃣ Responde al reto en un mensaje
 2️⃣ Incluye hashtags relevantes
-3️⃣ ¡Gana puntos automáticamente\\!
+3️⃣ ¡Gana puntos automáticamente!
 
-🏷️ *Hashtags sugeridos para hoy:*
+🏷️ <b>Hashtags sugeridos para hoy:</b>
 {' '.join(suggested_hashtags)}
 
-🏆 *Bonus extra si incluyes:*
+🏆 <b>Bonus extra si incluyes:</b>
 • Datos curiosos o análisis detallado
 • Recomendaciones para otros cinéfilos  
-• Mensajes de 100\\+ palabras \\(\\+2 pts bonus\\)
+• Mensajes de 100+ palabras (+2 pts bonus)
 
-⏰ *Nuevo reto disponible cada día a las 00:00*
+⏰ <b>Nuevo reto disponible cada día a las 00:00</b>
 
-¡Comparte tu pasión por el cine\\! 🍿"""
+¡Comparte tu pasión por el cine! 🍿"""
     
     try:
-        await update.message.reply_text(reto_text, parse_mode='MarkdownV2')
+        await update.message.reply_text(reto_text, parse_mode='HTML')
         logger.info(f"Usuario {update.effective_user.id} consultó reto diario")
     except Exception as e:
         logger.error(f"Error en cmd_reto: {e}")
@@ -540,17 +542,17 @@ async def handle_hashtags(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         random_response = random.choice(responses)
         
-        response = f"""✅ **{random_response}** 🎬
+        response = f"""✅ <b>{random_response}</b> 🎬
 
 👤 {user.mention_html()}
 🏷️ {hashtags_list}  
-💎 **+{total_points} puntos**{bonus_text}
+💎 <b>+{total_points} puntos</b>{bonus_text}
 
 🎭 ¡Sigue compartiendo tu pasión por el cine! 🍿"""
         
         # Agregar advertencias si las hay
         if warnings:
-            response += f"\n\n⚠️ **Notas:**\n" + "\n".join(warnings)
+            response += f"\n\n⚠️ <b>Notas:</b>\n" + "\n".join(warnings)
         
         await update.message.reply_text(
             response, 

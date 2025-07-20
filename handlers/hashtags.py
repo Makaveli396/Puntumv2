@@ -1,252 +1,291 @@
+#!/usr/bin/env python3
+
 from telegram import Update
-from db import add_points
-from handlers.retos import get_weekly_challenge, validate_challenge_submission, get_current_challenge
-from handlers.retos_diarios import get_today_challenge
+from telegram.ext import ContextTypes
+from db import get_user_stats, get_top10, add_points
+import random
+import datetime
+import logging
 import re
+import time
+import unicodedata
 
-# Importar get_random_reaction de forma segura
-try:
-    from handlers.phrases import get_random_reaction
-except ImportError:
-    print("[WARNING] handlers.phrases no encontrado, usando reacciones por defecto")
-    def get_random_reaction(tag, user_id):
-        reactions = {
-            "#aporte": "¡Excelente contribución! 🎬",
-            "#recomendación": "¡Gran recomendación! 🌟",
-            "#reseña": "¡Muy buena reseña! 📝",
-            "#crítica": "¡Análisis profundo! 🎯",
-            "#debate": "¡Interesante debate! 💭",
-            "#pregunta": "¡Buena pregunta! ❓",
-            "#spoiler": "¡Gracias por el spoiler! ⚠️"
-        }
-        return reactions.get(tag, "¡Buen aporte! 👍")
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-POINTS = {
-    "#aporte": 3,
-    "#recomendación": 5,
-    "#reseña": 7,
-    "#crítica": 10,
-    "#debate": 4,
-    "#pregunta": 2,
-    "#spoiler": 1,
+# HASHTAGS UNIFICADOS - SIN REPETICIONES Y CON DETECCIÓN FLEXIBLE
+VALID_HASHTAGS = {
+    # Alto valor
+    'critica': 10,         # Análisis profundo, mínimo 100 palabras  
+    'reseña': 7,           # Reseña detallada, mínimo 50 palabras
+    'resena': 7,           # Sin tilde
+    'recomendacion': 5,    # Formato específico requerido
+    
+    # Participación media
+    'debate': 4,
+    'aporte': 3,
+    'cinefilo': 3,
+    'pelicula': 3,
+    'cine': 3,
+    'serie': 3,
+    'director': 3,
+    'oscar': 3,
+    'festival': 3,
+    'documental': 3,
+    'animacion': 3,
+    'clasico': 3,
+    'independiente': 3,
+    
+    # Participación baja
+    'actor': 2,
+    'genero': 2,
+    'pregunta': 2,
+    'ranking': 2,
+    'rankin': 2,           # Typo común
+    
+    # Mínimo
+    'spoiler': 1
 }
 
+# Cache para control de spam
 user_hashtag_cache = {}
 
-def count_words(text):
-    """Cuenta palabras sin incluir hashtags"""
-    text_without_hashtags = re.sub(r'#\w+', '', text)
-    return len(text_without_hashtags.split())
+def normalize_text(text):
+    """Normaliza texto removiendo tildes y caracteres especiales"""
+    if not text:
+        return ""
+    
+    # Remover tildes y normalizar
+    normalized = unicodedata.normalize('NFD', text)
+    normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+    
+    # Convertir a minúsculas
+    return normalized.lower()
+
+def find_hashtags_in_message(text):
+    """FUNCIÓN MEJORADA - Encuentra TODOS los hashtags válidos con mejor detección"""
+    if not text:
+        return []
+    
+    print(f"[DEBUG] 🔍 Texto original: '{text}'")
+    
+    found_hashtags = []
+    
+    # Buscar patrones de hashtag más flexible: #palabra, # palabra, etc.
+    hashtag_patterns = [
+        r'#(\w+)',                    # #palabra (patrón normal)
+        r'#\s*(\w+)',                 # # palabra (con espacio)
+        r'(?:^|\s)#(\w+)',            # hashtag al inicio o después de espacio
+    ]
+    
+    for pattern in hashtag_patterns:
+        hashtags_found = re.findall(pattern, text, re.IGNORECASE | re.UNICODE)
+        
+        for hashtag_word in hashtags_found:
+            # Normalizar la palabra encontrada
+            normalized_hashtag = normalize_text(hashtag_word)
+            
+            print(f"[DEBUG] 🏷️ Hashtag encontrado: '{hashtag_word}' -> normalizado: '{normalized_hashtag}'")
+            
+            # Verificar si está en la lista de hashtags válidos
+            if normalized_hashtag in VALID_HASHTAGS:
+                points = VALID_HASHTAGS[normalized_hashtag]
+                found_hashtags.append((f"#{hashtag_word}", points))
+                print(f"[DEBUG] ✅ VÁLIDO: #{hashtag_word} = {points} puntos")
+            else:
+                print(f"[DEBUG] ❌ NO VÁLIDO: #{hashtag_word} (normalizado: {normalized_hashtag})")
+    
+    # Eliminar duplicados manteniendo el orden
+    unique_hashtags = []
+    seen = set()
+    for hashtag, points in found_hashtags:
+        hashtag_lower = hashtag.lower()
+        if hashtag_lower not in seen:
+            unique_hashtags.append((hashtag, points))
+            seen.add(hashtag_lower)
+    
+    print(f"[DEBUG] 🎯 Hashtags únicos finales: {unique_hashtags}")
+    return unique_hashtags
 
 def is_spam(user_id, hashtag):
     """Detecta spam basado en frecuencia de hashtags por usuario"""
-    import time
     current_time = time.time()
-
+    
     if user_id not in user_hashtag_cache:
         user_hashtag_cache[user_id] = {}
-
+    
     user_data = user_hashtag_cache[user_id]
-
+    
+    # Limpiar datos antiguos (más de 5 minutos)
+    if "last_time" in user_data and current_time - user_data["last_time"] > 300:
+        user_data.clear()
+    
+    # Contar uso del hashtag
     if hashtag in user_data:
-        if current_time - user_data.get("last_time", 0) < 300:  # 5 minutos
-            user_data[hashtag] = user_data.get(hashtag, 0) + 1
-            if user_data[hashtag] > 3:  # Máximo 3 hashtags iguales en 5 min
-                return True
-        else:
-            user_data[hashtag] = 1
+        user_data[hashtag] = user_data.get(hashtag, 0) + 1
+        if user_data[hashtag] > 3:  # Máximo 3 veces en 5 minutos
+            return True
     else:
         user_data[hashtag] = 1
-
+    
     user_data["last_time"] = current_time
     return False
 
-async def handle_hashtags(update: Update, context):
-    """Handler principal para procesar hashtags y otorgar puntos"""
-    text = update.message.text if update.message and update.message.text else ""
+def count_words(text):
+    """Cuenta palabras sin incluir hashtags"""
+    if not text:
+        return 0
+    text_without_hashtags = re.sub(r'#\w+', '', text)
+    return len(text_without_hashtags.split())
+
+# Niveles del sistema
+LEVEL_THRESHOLDS = {
+    1: (0, 99, "Novato Cinéfilo", "🌱"),
+    2: (100, 249, "Aficionado", "🎭"),
+    3: (250, 499, "Crítico Amateur", "🎬"),
+    4: (500, 999, "Experto Cinematográfico", "🏆"),
+    5: (1000, float('inf'), "Maestro del Séptimo Arte", "👑")
+}
+
+def calculate_level(points):
+    """Calcular nivel basado en puntos"""
+    for level, (min_pts, max_pts, _, _) in LEVEL_THRESHOLDS.items():
+        if min_pts <= points <= max_pts:
+            return level
+    return 1
+
+async def handle_hashtags(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """FUNCIÓN PRINCIPAL MEJORADA - Detecta TODOS los hashtags válidos"""
+    if not update.message or not update.message.text:
+        return
+    
+    message_text = update.message.text
     user = update.effective_user
-    chat_id = update.effective_chat.id
-    points = 0
-    found_tags = []
+    chat = update.effective_chat
+    
+    print(f"[DEBUG] 🔍 === INICIANDO PROCESAMIENTO ===")
+    print(f"[DEBUG] 👤 Usuario: {user.username or user.first_name} (ID: {user.id})")
+    print(f"[DEBUG] 📝 Mensaje: '{message_text}'")
+    print(f"[DEBUG] 💬 Chat: {chat.id}")
+    
+    # 🎯 DETECCIÓN MEJORADA DE HASHTAGS
+    found_hashtags = find_hashtags_in_message(message_text)
+    
+    if not found_hashtags:
+        print(f"[DEBUG] ❌ No se encontraron hashtags válidos")
+        return
+    
+    print(f"[DEBUG] ✅ Hashtags detectados: {found_hashtags}")
+    
+    # Verificar spam y calcular puntos
+    valid_hashtags = []
+    total_points = 0
     warnings = []
-    response = ""
+    
+    for hashtag, points in found_hashtags:
+        hashtag_word = hashtag[1:].lower()  # Remover # y convertir a minúsculas
+        
+        print(f"[DEBUG] 🔄 Procesando: {hashtag} ({points} pts)")
+        
+        # Verificar spam
+        if is_spam(user.id, hashtag):
+            warnings.append(f"⚠️ {hashtag}: Detectado spam. Usa hashtags con moderación.")
+            print(f"[DEBUG] 🚫 Spam detectado para {hashtag}")
+            continue
+        
+        # Validaciones especiales
+        word_count = count_words(message_text)
+        original_points = points
+        
+        if hashtag_word == "critica" and word_count < 25:
+            warnings.append(f"❌ {hashtag}: Necesitas análisis más profundo (mín. 100 palabras). Tienes ~{word_count*4} palabras.")
+            points = max(1, points // 2)
+        elif hashtag_word in ["reseña", "resena"] and word_count < 15:
+            warnings.append(f"❌ {hashtag}: Necesitas reseña más detallada (mín. 50 palabras). Tienes ~{word_count*4} palabras.")
+            points = max(1, points // 2)
+        
+        valid_hashtags.append((hashtag, points))
+        total_points += points
+        
+        print(f"[DEBUG] ✅ {hashtag}: {original_points} -> {points} puntos")
+    
+    if total_points <= 0:
+        print(f"[DEBUG] ❌ Total de puntos = 0, no procesar")
+        return
+    
+    # Bonus por mensaje detallado
+    bonus_text = ""
+    if len(message_text) > 150:
+        total_points += 2
+        bonus_text = " (+2 bonus detalle)"
+        print(f"[DEBUG] 💎 Bonus por detalle: +2 puntos")
+    
+    print(f"[DEBUG] 💰 Total final: {total_points} puntos")
+    
+    try:
+        # Guardar en base de datos
+        primary_hashtag = valid_hashtags[0][0] if valid_hashtags else "#aporte"
+        
+        print(f"[DEBUG] 💾 Guardando en BD...")
+        add_points(
+            user_id=user.id,
+            username=user.username or user.first_name,
+            points=total_points,
+            hashtag=primary_hashtag,
+            message_text=message_text[:200],
+            chat_id=chat.id,
+            message_id=update.message.message_id,
+            context=context
+        )
+        
+        print(f"[DEBUG] ✅ Datos guardados exitosamente")
+        
+        # Crear respuesta
+        hashtags_list = ", ".join([h[0] for h, p in valid_hashtags])
+        
+        responses = [
+            "¡Excelente aporte cinéfilo!",
+            "¡Puntos ganados!",
+            "¡Gran contribución al cine!",
+            "¡Sigue así, cinéfilo!",
+            "¡Fantástico análisis!",
+            "¡Perfecto para el grupo!"
+        ]
+        
+        random_response = random.choice(responses)
+        
+        response = f"""✅ **{random_response}** 🎬
 
-    print(f"[DEBUG] handle_hashtags procesando mensaje de {user.username or user.first_name}")
-    print(f"[DEBUG] Chat ID: {chat_id}")
-    print(f"[DEBUG] Texto: {text[:100]}...")
-    print(f"[DEBUG] Hashtags detectados en texto: {re.findall(r'#\w+', text.lower())}")
+👤 {user.mention_html()}
+🏷️ {hashtags_list}  
+💎 **+{total_points} puntos**{bonus_text}
 
-    # Procesar hashtags básicos
-    for tag, value in POINTS.items():
-        if tag in text.lower():
-            print(f"[DEBUG] Hashtag {tag} encontrado en el texto")
-            
-            # Verificar spam
-            if is_spam(user.id, tag):
-                warnings.append(f"⚠️ {tag}: Detectado spam. Usa hashtags con moderación.")
-                print(f"[DEBUG] Spam detectado para {tag}")
-                continue
-
-            # Validaciones especiales por hashtag
-            if tag == "#reseña":
-                word_count = count_words(text)
-                if word_count < 50:
-                    warnings.append(f"❌ {tag}: Necesitas mínimo 50 palabras. Tienes {word_count}.")
-                    print(f"[DEBUG] Reseña muy corta: {word_count} palabras")
-                    continue
-
-            elif tag == "#crítica":
-                word_count = count_words(text)
-                if word_count < 100:
-                    warnings.append(f"❌ {tag}: Necesitas mínimo 100 palabras. Tienes {word_count}.")
-                    print(f"[DEBUG] Crítica muy corta: {word_count} palabras")
-                    continue
-
-            elif tag == "#recomendación":
-                # Buscar formato "Título, País, Año"
-                has_pattern = bool(re.search(r'[A-Za-z\s]+,\s*[A-Za-z\s]+,\s*\d{4}', text))
-                if not has_pattern:
-                    warnings.append(f"💡 {tag}: Incluye formato 'Título, País, Año' para máximos puntos.")
-                    value = 3  # Reducir puntos si no tiene formato completo
-                    print(f"[DEBUG] Recomendación sin formato completo")
-
-            points += value
-            found_tags.append(f"{tag} (+{value})")
-            print(f"[DEBUG] Puntos agregados: {value} por {tag}")
-
-    print(f"[DEBUG] Total puntos a otorgar: {points}")
-    print(f"[DEBUG] Tags encontrados: {found_tags}")
-    print(f"[DEBUG] Advertencias: {warnings}")
-
-    # Procesar solo si hay puntos o advertencias
-    if points > 0 or warnings:
-        # Agregar puntos básicos a la base de datos
-        if points > 0:
-            try:
-                print(f"[DEBUG] Intentando agregar {points} puntos a la DB...")
-                result = add_points(
-                    user.id,
-                    user.username or user.first_name,
-                    points,
-                    hashtag=None,
-                    message_text=text,
-                    chat_id=chat_id,
-                    message_id=update.message.message_id,
-                    is_challenge_bonus=False,
-                    context=context
-                )
-                print(f"[DEBUG] ✅ Puntos agregados exitosamente: {result}")
-            except Exception as e:
-                print(f"[ERROR] Error agregando puntos básicos: {e}")
-                import traceback
-                traceback.print_exc()
-
-        # Construir respuesta para puntos básicos
-        if points > 0:
-            tags_text = ", ".join(found_tags)
-            tag_main = found_tags[0].split()[0] if found_tags else "default"
-            try:
-                reaction = get_random_reaction(tag_main, user.id)
-                response += f"✅ +{points} puntos por: {tags_text}\n{reaction}\n"
-                print(f"[DEBUG] Reacción obtenida: {reaction}")
-            except Exception as e:
-                print(f"[ERROR] Error obteniendo reacción: {e}")
-                response += f"✅ +{points} puntos por: {tags_text}\n"
-
-        # Agregar advertencias
+🎭 ¡Sigue compartiendo tu pasión por el cine! 🍿"""
+        
+        # Agregar advertencias si las hay
         if warnings:
-            response += "\n".join(warnings) + "\n"
-
-        # Verificar reto semanal
+            response += f"\n\n⚠️ **Notas:**\n" + "\n".join(warnings)
+        
+        await update.message.reply_text(
+            response, 
+            parse_mode='HTML',
+            reply_to_message_id=update.message.message_id
+        )
+        
+        print(f"[DEBUG] ✅ Respuesta enviada correctamente")
+        logger.info(f"Usuario {user.id} ganó {total_points} puntos con: {hashtags_list}")
+        
+    except Exception as e:
+        logger.error(f"❌ ERROR en handle_hashtags: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Respuesta de emergencia
         try:
-            current_challenge = get_current_challenge()
-            if current_challenge and current_challenge.get("hashtag"):
-                hashtag_challenge = current_challenge["hashtag"]
-                if hashtag_challenge in text.lower():
-                    if validate_challenge_submission(current_challenge, text):
-                        bonus = current_challenge.get("bonus_points", 10)
-                        try:
-                            bonus_result = add_points(
-                                user.id,
-                                user.username or user.first_name,
-                                bonus,
-                                hashtag=hashtag_challenge,
-                                message_text=text,
-                                chat_id=chat_id,
-                                message_id=update.message.message_id,
-                                is_challenge_bonus=True,
-                                context=context
-                            )
-                            response += f"\n🎯 ¡Reto semanal completado! Bonus: +{bonus} puntos 🎉"
-                            print(f"[DEBUG] ✅ Bonus semanal agregado: {bonus}")
-                        except Exception as e:
-                            print(f"[ERROR] Error agregando bonus semanal: {e}")
-        except Exception as e:
-            print(f"[ERROR] Error validando reto semanal: {e}")
+            await update.message.reply_text(f"✅ ¡Puntos ganados! +{total_points} pts 🎬")
+            print(f"[DEBUG] 🆘 Respuesta de emergencia enviada")
+        except Exception as e2:
+            print(f"[DEBUG] ❌ Error crítico: No se pudo enviar respuesta: {e2}")
 
-        # Verificar reto diario
-        try:
-            daily = get_today_challenge()
-            if daily:
-                cumple = False
-
-                # Verificar hashtag específico
-                if "hashtag" in daily and daily["hashtag"] in text.lower():
-                    cumple = True
-                # Verificar palabras clave
-                elif "keywords" in daily:
-                    cumple = any(word in text.lower() for word in daily["keywords"])
-
-                # Verificar longitud mínima si se requiere
-                if cumple and "min_words" in daily:
-                    word_count = count_words(text)
-                    if word_count < daily["min_words"]:
-                        cumple = False
-
-                if cumple:
-                    daily_bonus = daily.get("bonus_points", 5)
-                    try:
-                        bonus_result = add_points(
-                            user.id,
-                            user.username or user.first_name,
-                            daily_bonus,
-                            hashtag="(reto_diario)",
-                            message_text=text,
-                            chat_id=chat_id,
-                            message_id=update.message.message_id,
-                            is_challenge_bonus=True,
-                            context=context
-                        )
-                        response += f"\n🎯 ¡Reto diario completado! Bonus: +{daily_bonus} puntos 🎉"
-                        print(f"[DEBUG] ✅ Bonus diario agregado: {daily_bonus}")
-                    except Exception as e:
-                        print(f"[ERROR] Error agregando bonus diario: {e}")
-        except Exception as e:
-            print(f"[ERROR] Error validando reto diario: {e}")
-
-        # Enviar respuesta si hay contenido
-        if response.strip():
-            try:
-                print(f"[DEBUG] Enviando respuesta: {response.strip()}")
-                await update.message.reply_text(response.strip())
-                print(f"[DEBUG] ✅ Respuesta enviada exitosamente")
-            except Exception as e:
-                print(f"[ERROR] Error enviando respuesta: {e}")
-                import traceback
-                traceback.print_exc()
-        else:
-            print(f"[DEBUG] No hay respuesta para enviar")
-
-    else:
-        print(f"[DEBUG] No se procesó nada: points={points}, warnings={len(warnings)}")
-
-    # Detección de spam adicional
-    spam_words = ["gratis", "oferta", "descuento", "promoción", "gana dinero", "click aquí"]
-    if any(spam_word in text.lower() for spam_word in spam_words):
-        try:
-            await update.message.reply_text("🛑 ¡Cuidado con el spam! Esto es un grupo de cine, no de ofertas.")
-            print(f"[DEBUG] ✅ Advertencia de spam enviada")
-        except Exception as e:
-            print(f"[ERROR] Error enviando advertencia de spam: {e}")
-
-    print(f"[DEBUG] handle_hashtags terminado")
+    print(f"[DEBUG] 🏁 === PROCESAMIENTO TERMINADO ===\n")

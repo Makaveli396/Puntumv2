@@ -750,8 +750,7 @@ else:
     points = 0
     correct = False
 
-    # Procesar resultado
-    if correct:
+
     
     # Procesar resultado
     if correct:

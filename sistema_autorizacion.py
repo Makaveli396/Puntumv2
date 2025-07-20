@@ -5,7 +5,7 @@ from telegram.ext import ContextTypes
 from db import get_connection
 
 # Configuración - ID del administrador principal
-ADMIN_USER_ID = None  # Cambiar por tu user_id de Telegram
+ADMIN_USER_ID = 5548909327  # Cambiar por tu user_id de Telegram
 
 def create_auth_tables():
     """Crear tablas para el sistema de autorización"""

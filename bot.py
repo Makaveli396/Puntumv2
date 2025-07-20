@@ -117,36 +117,16 @@ def main():
     app.add_handler(CommandHandler("estadisticasjuegos", auth_required(cmd_estadisticasjuegos)))
     app.add_handler(CommandHandler("topjugadores", auth_required(cmd_top_jugadores)))
     
-    # ==================== SOLUCIÓN DEFINITIVA DE MANEJADORES ====================
+    # MANEJADOR DE HASHTAGS - DEBE IR ANTES que handle_game_message
+    # para que tenga prioridad en el procesamiento
+    hashtag_filter = filters.TEXT & ~filters.COMMAND & filters.Regex(r'#\w+')
+    app.add_handler(MessageHandler(hashtag_filter, auth_required(handle_hashtags)))
+    print("[INFO] ✅ Manejador de hashtags configurado")
     
-    async def unified_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Manejador unificado que decide si procesar hashtags o juegos"""
-    if not update.message or not update.message.text:
-        return
-        
-    message_text = update.message.text
-    
-    # ✅ REGEX CORREGIDO - Detecta caracteres Unicode incluyendo ñ, acentos, etc.
-    hashtag_pattern = r'#[\w\u00C0-\u017F]+'
-    found_hashtags = re.findall(hashtag_pattern, message_text, re.IGNORECASE)
-    
-    if found_hashtags:
-        print(f"[DEBUG] 🏷️ Procesando como HASHTAG: '{message_text[:50]}...'")
-        print(f"[DEBUG] 🔍 Hashtags encontrados por regex: {found_hashtags}")
-        return await handle_hashtags(update, context)
-    else:
-        print(f"[DEBUG] 🎮 Procesando como JUEGO: '{message_text[:50]}...'")
-        return await handle_game_message(update, context)
-    
-    # 1. CALLBACKS primero
+    # Manejadores de callbacks y mensajes (van después)
     app.add_handler(CallbackQueryHandler(handle_trivia_callback))
-    
-    # 2. MANEJADOR UNIFICADO para todos los mensajes de texto
-    text_filter = filters.TEXT & ~filters.COMMAND
-    app.add_handler(MessageHandler(text_filter, auth_required(unified_message_handler)))
-    
-    print("[INFO] ✅ Manejador unificado de hashtags y juegos configurado")
-    
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auth_required(handle_game_message)))
+
     print("[INFO] ✅ Todos los handlers configurados")
 
     # Ejecutar en modo desarrollo o producción

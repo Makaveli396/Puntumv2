@@ -378,8 +378,8 @@ async def cmd_pista(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     game = active_games[game_key]
     
-    if game["type"] != "guess_movie":
-        await update.message.reply_text("❌ Este comando solo funciona en 'Adivina la Película'.")
+    if game["type"] not in ["guess_movie", "guess_director"]:
+        await update.message.reply_text("❌ Este comando solo funciona en juegos con pistas.")
         return
     
     if game["current_clue"] >= 3:
@@ -387,13 +387,13 @@ async def cmd_pista(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     game["current_clue"] += 1
-    movie = game["movie"]
     current_clue = game["current_clue"]
     
-    # Calcular puntos restantes
-    points_remaining = max(movie["points"] - (current_clue * 3), 3)
-    
-    pista_text = f"""
+    if game["type"] == "guess_movie":
+        movie = game["movie"]
+        points_remaining = max(movie["points"] - (current_clue * 3), 3)
+        
+        pista_text = f"""
 🎬 **ADIVINA LA PELÍCULA** 🔍
 
 💡 **Pista {current_clue + 1}/4:**
@@ -403,7 +403,23 @@ async def cmd_pista(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 **¿Cuál es la película?**
 Responde con el nombre de la película.
-    """
+        """
+        
+    elif game["type"] == "guess_director":
+        director = game["director"]
+        points_remaining = max(director["points"] - (current_clue * 3), 3)
+        
+        pista_text = f"""
+🎬 **ADIVINA EL DIRECTOR** 🎭
+
+💡 **Pista {current_clue + 1}/4:**
+{director['clues'][current_clue]}
+
+**Puntos restantes:** {points_remaining} 💎
+
+**¿Quién es el director?**
+Responde con el nombre del director.
+        """
     
     if current_clue < 3:
         pista_text += "\n💡 Usa /pista para obtener la siguiente pista"
@@ -631,8 +647,66 @@ async def cmd_estadisticasjuegos(update: Update, context: ContextTypes.DEFAULT_T
     
     await update.message.reply_text(stats_text, parse_mode='Markdown')
 
+# =================== TOP JUGADORES ===================
+async def cmd_top_jugadores(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Ver ranking global de jugadores de juegos"""
+    if not game_stats:
+        await update.message.reply_text(
+            "📊 Aún no hay estadísticas de juegos.\n"
+            "¡Sean los primeros en jugar!"
+        )
+        return
+    
+    # Calcular ranking por victorias totales
+    player_rankings = []
+    
+    for user_id, user_data in game_stats.items():
+        total_wins = 0
+        total_games = 0
+        
+        for game_type, stats in user_data.items():
+            total_wins += stats.get("wins", 0)
+            total_games += stats.get("total", 0)
+        
+        if total_games > 0:
+            win_rate = (total_wins / total_games * 100)
+            player_rankings.append({
+                "user_id": user_id,
+                "wins": total_wins,
+                "games": total_games,
+                "win_rate": win_rate
+            })
+    
+    # Ordenar por victorias (y win rate como criterio secundario)
+    player_rankings.sort(key=lambda x: (x["wins"], x["win_rate"]), reverse=True)
+    
+    if not player_rankings:
+        await update.message.reply_text("📊 No hay suficientes datos para mostrar un ranking.")
+        return
+    
+    ranking_text = "🏆 **TOP JUGADORES - RANKING GLOBAL** 🎮\n\n"
+    
+    medals = ["🥇", "🥈", "🥉"]
+    
+    for i, player in enumerate(player_rankings[:10]):  # Top 10
+        if i < 3:
+            medal = medals[i]
+        else:
+            medal = f"{i+1}."
+        
+        # Obtener información del usuario (necesitarías almacenar nombres)
+        # Por ahora usamos el user_id
+        ranking_text += f"{medal} **Usuario {player['user_id']}**\n"
+        ranking_text += f"   🏆 Victorias: {player['wins']}\n"
+        ranking_text += f"   🎯 Juegos: {player['games']}\n"
+        ranking_text += f"   📊 Win Rate: {player['win_rate']:.1f}%\n\n"
+    
+    ranking_text += "🎬 ¡Sigue jugando para subir en el ranking!"
+    
+    await update.message.reply_text(ranking_text, parse_mode='Markdown')
+
 # =================== MANEJO DE RESPUESTAS DE JUEGOS ===================
-async def handle_game_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_game_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manejar respuestas de texto en juegos activos"""
     user = update.effective_user
     chat = update.effective_chat
@@ -652,30 +726,32 @@ async def handle_game_response(update: Update, context: ContextTypes.DEFAULT_TYP
     
     if game_type == "guess_movie":
         correct_answer = game["movie"]["title"]
+        points = max(game["movie"]["points"]
+if game_type == "guess_movie":
+        correct_answer = game["movie"]["title"]
         points = max(game["movie"]["points"] - (game["current_clue"] * 3), 3)
-        correct = message_text in correct_answer.lower() or correct_answer.lower() in message_text
+        correct = is_similar_answer(message_text, correct_answer)
         
     elif game_type == "emoji_movie":
         correct_answer = game["movie"]["title"]
         points = game["movie"]["points"]
-        correct = message_text in correct_answer.lower() or correct_answer.lower() in message_text
+        correct = is_similar_answer(message_text, correct_answer)
         
     elif game_type == "guess_director":
         correct_answer = game["director"]["director"]
         points = max(game["director"]["points"] - (game["current_clue"] * 3), 3)
-        correct = message_text in correct_answer.lower() or correct_answer.lower() in message_text
+        correct = is_similar_answer(message_text, correct_answer)
         
     elif game_type == "guess_quote":
         correct_answer = game["quote"]["movie"]
         points = game["quote"]["points"]
-        correct = message_text in correct_answer.lower() or correct_answer.lower() in message_text
+        correct = is_similar_answer(message_text, correct_answer)
     
     else:
-        return False  # Tipo de juego no manejado aquí
+        return False  # Tipo de juego no reconocido
     
     # Procesar resultado
     if correct:
-        # Respuesta correcta
         add_points(
             user_id=user.id,
             username=user.username or user.first_name,
@@ -693,26 +769,126 @@ async def handle_game_response(update: Update, context: ContextTypes.DEFAULT_TYP
 🎯 Respuesta: **{correct_answer}**
 💎 **+{points} puntos ganados**
 
-¡Excelente! 🍿
+¡Excelente conocimiento cinematográfico! 🍿
         """
-        
         update_game_stats(user.id, game_type, "win")
         
-        await update.message.reply_text(result_text, parse_mode='HTML')
+        await update.message.reply_html(result_text)
         del active_games[game_key]
+        return True
         
     else:
-        # Respuesta incorrecta - dar feedback
-        hints = {
-            "guess_movie": "🔍 Intenta ser más específico o usa /pista para más ayuda.",
-            "emoji_movie": "🎭 ¿Estás seguro? Piensa en qué representan los emojis.",
-            "guess_director": "🎭 Intenta ser más específico o usa /pista para más ayuda.",
-            "guess_quote": "💬 ¿Estás seguro? Piensa en el contexto de la frase."
-        }
-        
+        # Respuesta incorrecta - el juego continúa
         await update.message.reply_text(
-            f"❌ No es correcto. {hints.get(game_type, 'Inténtalo de nuevo.')}\n"
-            f"🚪 Usa /rendirse si quieres abandonar."
+            f"❌ No es correcto. ¡Sigue intentando!\n"
+            f"💡 Usa /pista para más ayuda (si está disponible)\n"
+            f"🚪 Usa /rendirse para abandonar"
         )
+        return True
+
+def is_similar_answer(user_answer: str, correct_answer: str) -> bool:
+    """Verificar si la respuesta del usuario es similar a la correcta"""
+    import re
     
-    return True  # Indicar que se manejó el mensaje
+    # Limpiar y normalizar respuestas
+    def normalize_text(text):
+        # Convertir a minúsculas y quitar acentos básicos
+        text = text.lower()
+        text = text.replace('á', 'a').replace('é', 'e').replace('í', 'i')
+        text = text.replace('ó', 'o').replace('ú', 'u').replace('ñ', 'n')
+        # Quitar caracteres especiales y espacios extra
+        text = re.sub(r'[^\w\s]', '', text)
+        text = ' '.join(text.split())
+        return text
+    
+    user_normalized = normalize_text(user_answer)
+    correct_normalized = normalize_text(correct_answer)
+    
+    # Verificaciones de similitud
+    # 1. Coincidencia exacta
+    if user_normalized == correct_normalized:
+        return True
+    
+    # 2. El usuario escribió la respuesta correcta dentro de su mensaje
+    if correct_normalized in user_normalized:
+        return True
+    
+    # 3. Palabras clave importantes (para títulos largos)
+    user_words = set(user_normalized.split())
+    correct_words = set(correct_normalized.split())
+    
+    # Si hay al menos 2 palabras importantes en común y el título no es muy corto
+    if len(correct_words) > 1:
+        common_words = user_words.intersection(correct_words)
+        important_words = correct_words - {'the', 'el', 'la', 'los', 'las', 'de', 'del', 'y', 'and', 'of', 'in', 'a', 'an'}
+        
+        if len(common_words) >= min(2, len(important_words)):
+            return True
+    
+    # 4. Para nombres de directores (nombre y apellido)
+    if len(correct_normalized.split()) >= 2:
+        # Si el usuario mencionó al menos el apellido
+        correct_parts = correct_normalized.split()
+        if any(part in user_normalized for part in correct_parts if len(part) > 3):
+            return True
+    
+    return False
+
+# =================== COMANDOS DE AYUDA ===================
+async def cmd_juegos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Mostrar todos los juegos disponibles"""
+    games_text = """
+🎮 **JUEGOS DE CINE DISPONIBLES** 🎬
+
+🎯 **JUEGOS DE TRIVIA:**
+• `/cinematrivia` - Preguntas de opción múltiple
+• `/adivinafrase` - Adivina la película por una frase famosa
+
+🔍 **JUEGOS DE ADIVINANZA:**
+• `/adivinapelicula` - Adivina película por pistas
+• `/adivinadirector` - Adivina director por pistas  
+• `/emojipelicula` - Adivina película por emojis
+
+⚡ **COMANDOS ÚTILES:**
+• `/pista` - Obtener siguiente pista (juegos con pistas)
+• `/rendirse` - Abandonar juego actual
+• `/estadisticasjuegos` - Ver tus estadísticas
+• `/topjugadores` - Ver ranking global
+
+🎯 **¿Cómo jugar?**
+1. Usa cualquier comando de juego para empezar
+2. Solo puedes tener un juego activo a la vez
+3. Ganas puntos por respuestas correctas
+4. ¡Entre menos pistas uses, más puntos ganas!
+
+🏆 **Sistema de puntos:**
+- Respuestas correctas = Puntos para el ranking
+- Los puntos varían según la dificultad
+- Usa menos pistas para maximizar puntos
+
+¡Demuestra tu conocimiento cinematográfico! 🍿
+    """
+    
+    await update.message.reply_text(games_text, parse_mode='Markdown')
+
+# =================== EXPORTAR FUNCIONES ===================
+def get_game_handlers():
+    """Retornar todos los handlers de juegos para registrar en main.py"""
+    return {
+        'commands': [
+            ('cinematrivia', cmd_cinematrivia),
+            ('adivinapelicula', cmd_adivinapelicula),
+            ('emojipelicula', cmd_emojipelicula),
+            ('adivinadirector', cmd_adivinadirector),
+            ('adivinafrase', cmd_adivinafrase),
+            ('pista', cmd_pista),
+            ('rendirse', cmd_rendirse),
+            ('estadisticasjuegos', cmd_estadisticasjuegos),
+            ('topjugadores', cmd_top_jugadores),
+            ('juegos', cmd_juegos)
+        ],
+        'callbacks': [
+            ('trivia_', handle_trivia_callback)
+        ],
+        'message_handler': handle_game_message
+    }

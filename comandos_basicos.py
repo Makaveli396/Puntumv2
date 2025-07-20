@@ -74,41 +74,60 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando de ayuda completa"""
     help_text = """
-🎬 **GUÍA COMPLETA DEL BOT CINÉFILO**
+# 🎬 GUÍA COMPLETA DEL BOT CINÉFILO
 
-**📊 SISTEMA DE PUNTOS**
+## 📊 SISTEMA DE PUNTOS
 Gana puntos usando hashtags en tus mensajes:
-• #cinefilo - 5 pts
-• #oscar #festival - 5 pts  
-• #critica #documental - 4 pts
-• #pelicula #director #cine #serie - 3 pts
-• #actor #genero - 2 pts
 
-**🎮 JUEGOS DISPONIBLES**
-/cinematrivia - Trivia con opciones múltiples
-/adivinapelicula - Adivina película por pistas
-/emojipelicula - Adivina película por emojis
-/pista - Pedir ayuda en juego activo
-/rendirse - Abandonar juego actual
+**Hashtags de Alto Valor:**
+• **#crítica** - 10 pts *(mínimo 100 palabras)*
+• **#reseña** - 7 pts *(mínimo 50 palabras)*
+• **#recomendación** - 5 pts *(formato: Título, País, Año)*
 
-**📈 COMANDOS DE INFORMACIÓN**
-/ranking - Top 10 usuarios globales
-/miperfil - Tus estadísticas personales
-/estadisticasjuegos - Tus stats de juegos
-/topjugadores - Ranking de juegos
+**Hashtags de Participación:**
+• **#debate** - 4 pts
+• **#aporte** - 3 pts
+• **#pregunta** - 2 pts
+• **#spoiler** - 1 pt
 
-**🏆 SISTEMA DE NIVELES**
-1️⃣ Novato Cinéfilo (0-99 pts)
-2️⃣ Aficionado (100-249 pts)
-3️⃣ Crítico Amateur (250-499 pts)
-4️⃣ Experto Cinematográfico (500-999 pts)
-5️⃣ Maestro del Séptimo Arte (1000+ pts)
+## 🎮 JUEGOS DISPONIBLES
+• `/cinematrivia` - Trivia con opciones múltiples
+• `/adivinapelicula` - Adivina película por pistas
+• `/emojipelicula` - Adivina película por emojis
+• `/pista` - Pedir ayuda en juego activo
+• `/rendirse` - Abandonar juego actual
 
-**🎯 RETOS**
-/reto - Ver reto diario (bonus extra)
+## 📈 COMANDOS DE INFORMACIÓN
+• `/ranking` - Top 10 usuarios globales
+• `/miperfil` - Tus estadísticas personales
+• `/estadisticasjuegos` - Tus stats de juegos
+• `/topjugadores` - Ranking de juegos
+
+## 🎯 RETOS Y BONIFICACIONES
+• `/reto` - Ver reto diario y semanal
+• **Reto Semanal**: Completa desafíos especiales con hashtags
+• **Reto Diario**: Actividades diarias con bonus extra
+
+## 🏆 SISTEMA DE NIVELES
+1️⃣ **Novato Cinéfilo** (0-99 pts)
+2️⃣ **Aficionado** (100-249 pts)
+3️⃣ **Crítico Amateur** (250-499 pts)
+4️⃣ **Experto Cinematográfico** (500-999 pts)
+5️⃣ **Maestro del Séptimo Arte** (1000+ pts)
+
+## 💡 CONSEJOS PARA MAXIMIZAR PUNTOS
+• **Para #recomendación**: Usa el formato "Título, País, Año"
+• **Para #reseña**: Escribe al menos 50 palabras sin hashtags
+• **Para #crítica**: Desarrolla análisis de 100+ palabras
+• **Evita spam**: Máximo 3 hashtags iguales cada 5 minutos
+
+## ⚠️ NORMAS DEL GRUPO
+• Contenido relacionado con cine únicamente
+• Respeto en debates y discusiones
+• No spam ni contenido comercial
+• Los spoilers deben marcarse con #spoiler
 
 ¡Diviértete compartiendo tu pasión por el cine! 🍿
-    """
     
     await update.message.reply_text(help_text, parse_mode='Markdown')
 
